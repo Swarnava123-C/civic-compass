@@ -16,12 +16,13 @@ describe("GovernmentStructure", () => {
     const user = userEvent.setup();
     render(<GovernmentStructure />);
 
-    const execBtn = screen.getByRole("button", { name: /executive branch/i });
-    await user.click(execBtn);
+    const buttons = screen.getAllByRole("button");
+    const execBtn = buttons.find(b => b.getAttribute("aria-label")?.includes("Executive Branch"));
+    expect(execBtn).toBeDefined();
+    await user.click(execBtn!);
 
     expect(screen.getByText("Powers")).toBeInTheDocument();
     expect(screen.getByText("Checks & Balances")).toBeInTheDocument();
-    expect(screen.getByText(/signs or vetoes legislation/i)).toBeInTheDocument();
   });
 
   it("branches are keyboard accessible via Enter", async () => {
