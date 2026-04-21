@@ -10,12 +10,11 @@ describe("StateInfoPanel", () => {
 
   it("shows state info when a state is selected", () => {
     render(<StateInfoPanel selectedState={{ name: "Uttar Pradesh", code: "UP" }} />);
-    expect(screen.getByText(/uttar pradesh/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/uttar pradesh/i).length).toBeGreaterThan(0);
   });
 
   it("shows election authority link", () => {
     render(<StateInfoPanel selectedState={{ name: "Maharashtra", code: "MH" }} />);
-    const link = screen.getByText(/CEO Maharashtra/i);
-    expect(link).toBeInTheDocument();
+    expect(screen.getByText(/CEO Maharashtra/i)).toBeInTheDocument();
   });
 });
