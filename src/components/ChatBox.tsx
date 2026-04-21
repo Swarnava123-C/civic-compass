@@ -1,10 +1,15 @@
 import { useState, useCallback, useRef, memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
+import { Send, Loader2, Sparkles, MessageSquare } from "lucide-react";
 import { sanitizeInput } from "@/utils/date";
 import { logger } from "@/utils/logger";
 import { trackApiLatency } from "@/utils/performance";
+import { validateStructuredResponse } from "@/utils/schemaValidation";
+import { computeConfidenceBreakdown } from "@/utils/confidenceEngine";
 import StructuredResponse from "@/components/StructuredResponse";
-import type { ChatMessage, DetailLevel, StructuredAIResponse } from "@/types/civic";
+import ConfidenceBreakdownCard from "@/components/ConfidenceBreakdownCard";
+import ParseErrorCard from "@/components/ParseErrorCard";
+import type { ChatMessage, DetailLevel, StructuredAIResponse, UserProfile, ConfidenceBreakdown } from "@/types/civic";
 import { FAQ_ITEMS } from "@/data/civicContent";
 
 const PARTISAN_REFUSAL =
@@ -32,24 +37,17 @@ function findLocalAnswer(input: string): string | null {
   return match?.answer ?? null;
 }
 
-function computeConfidence(input: string): "high" | "medium" | "low" {
-  const statePattern = /\b(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)\b/i;
-  const processPattern = /\b(register|registration|vote|voting|ballot|polling|absentee|primary|election|campaign|count|recount|certif)\b/i;
-
-  const hasState = statePattern.test(input);
-  const hasProcess = processPattern.test(input);
-
-  if (hasState && hasProcess) return "high";
-  if (hasProcess) return "medium";
-  return "low";
+interface ChatBoxProps {
+  profile?: UserProfile | null;
 }
 
-const ChatBox = memo(function ChatBox() {
+const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [detailLevel, setDetailLevel] = useState<DetailLevel>("beginner");
   const [useStructured, setUseStructured] = useState(true);
+  const [lastBreakdown, setLastBreakdown] = useState<ConfidenceBreakdown | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +58,7 @@ const ChatBox = memo(function ChatBox() {
   }, []);
 
   const addMessage = useCallback(
-    (role: ChatMessage["role"], content: string, confidence?: ChatMessage["confidence"], structured?: StructuredAIResponse | null) => {
+    (role: ChatMessage["role"], content: string, confidence?: ChatMessage["confidence"], structured?: StructuredAIResponse | null, parseError?: boolean) => {
       const msg: ChatMessage = {
         id: crypto.randomUUID(),
         role,
@@ -68,6 +66,7 @@ const ChatBox = memo(function ChatBox() {
         timestamp: new Date(),
         confidence,
         structured: structured ?? undefined,
+        parseError,
       };
       setMessages((prev) => [...prev, msg]);
       setTimeout(scrollToBottom, 50);
@@ -75,6 +74,14 @@ const ChatBox = memo(function ChatBox() {
     },
     [scrollToBottom]
   );
+
+  const loadingMessages = useMemo(() => [
+    "Analyzing election process…",
+    "Mapping timeline stage…",
+    "Evaluating requirements…",
+  ], []);
+
+  const [loadingText, setLoadingText] = useState(loadingMessages[0]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -84,6 +91,9 @@ const ChatBox = memo(function ChatBox() {
 
       setInput("");
       addMessage("user", sanitized);
+
+      const breakdown = computeConfidenceBreakdown(sanitized, profile);
+      setLastBreakdown(breakdown);
 
       if (isPartisanQuery(sanitized)) {
         addMessage("assistant", PARTISAN_REFUSAL, "high");
@@ -106,6 +116,12 @@ const ChatBox = memo(function ChatBox() {
       }
 
       setIsLoading(true);
+      let loadingIdx = 0;
+      const loadingInterval = setInterval(() => {
+        loadingIdx = (loadingIdx + 1) % loadingMessages.length;
+        setLoadingText(loadingMessages[loadingIdx]);
+      }, 1500);
+
       const startTime = performance.now();
 
       try {
@@ -114,10 +130,7 @@ const ChatBox = memo(function ChatBox() {
           { role: "user" as const, content: sanitized },
         ];
 
-        const confidence = computeConfidence(sanitized);
-
         if (useStructured) {
-          // Structured mode — non-streaming
           const resp = await fetch(`${supabaseUrl}/functions/v1/civic-chat`, {
             method: "POST",
             headers: {
@@ -136,12 +149,16 @@ const ChatBox = memo(function ChatBox() {
           const data = await resp.json();
 
           if (data.structured) {
-            const s = data.structured as StructuredAIResponse;
-            // Override confidence with our local engine
-            s.confidence_score = confidence;
-            addMessage("assistant", s.summary || "Here is the information:", confidence, s);
+            const validation = validateStructuredResponse(data.structured);
+            if (validation.valid && validation.data) {
+              validation.data.confidence_score = breakdown.level;
+              addMessage("assistant", validation.data.summary || "Here is the information:", breakdown.level, validation.data);
+            } else {
+              addMessage("assistant", data.structured?.summary || data.content || "Response format issue.", breakdown.level, null, true);
+              logger.warn("Schema validation failed", { errors: validation.errors });
+            }
           } else {
-            addMessage("assistant", data.content || "I couldn't generate a response.", confidence);
+            addMessage("assistant", data.content || "I couldn't generate a response.", breakdown.level);
           }
           return;
         }
@@ -190,7 +207,7 @@ const ChatBox = memo(function ChatBox() {
               if (content) {
                 assistantContent += content;
                 if (!msgAdded) {
-                  addMessage("assistant", assistantContent, confidence);
+                  addMessage("assistant", assistantContent, breakdown.level);
                   msgAdded = true;
                 } else {
                   setMessages((prev) => {
@@ -221,10 +238,11 @@ const ChatBox = memo(function ChatBox() {
           "low"
         );
       } finally {
+        clearInterval(loadingInterval);
         setIsLoading(false);
       }
     },
-    [input, messages, addMessage, detailLevel, supabaseUrl, useStructured]
+    [input, messages, addMessage, detailLevel, supabaseUrl, useStructured, profile, loadingMessages]
   );
 
   const confidenceColor = useCallback((c?: ChatMessage["confidence"]) => {
@@ -237,12 +255,12 @@ const ChatBox = memo(function ChatBox() {
   }, []);
 
   return (
-    <section className="py-16 px-4 bg-muted/30" aria-labelledby="chat-heading">
+    <section className="py-20 px-4 civic-gradient-subtle" aria-labelledby="chat-heading">
       <div className="container max-w-3xl mx-auto">
-        <h2 id="chat-heading" className="text-3xl font-bold text-foreground mb-2 text-center">
+        <h2 id="chat-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-center">
           Guided Civic Assistant
         </h2>
-        <p className="text-muted-foreground text-center mb-4 font-sans">
+        <p className="text-muted-foreground text-center mb-6 font-sans">
           AI-powered Q&A — factual, non-partisan, with structured intelligence
         </p>
 
@@ -251,7 +269,7 @@ const ChatBox = memo(function ChatBox() {
           <button
             onClick={() => setDetailLevel("beginner")}
             className={`px-4 py-1.5 rounded-full text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
-              detailLevel === "beginner" ? "bg-primary text-primary-foreground" : "bg-card border text-muted-foreground"
+              detailLevel === "beginner" ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
             }`}
             aria-pressed={detailLevel === "beginner"}
             aria-label="Set detail level to beginner"
@@ -261,7 +279,7 @@ const ChatBox = memo(function ChatBox() {
           <button
             onClick={() => setDetailLevel("detailed")}
             className={`px-4 py-1.5 rounded-full text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
-              detailLevel === "detailed" ? "bg-primary text-primary-foreground" : "bg-card border text-muted-foreground"
+              detailLevel === "detailed" ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
             }`}
             aria-pressed={detailLevel === "detailed"}
             aria-label="Set detail level to detailed"
@@ -273,23 +291,23 @@ const ChatBox = memo(function ChatBox() {
         <div className="flex justify-center gap-2 mb-6">
           <button
             onClick={() => setUseStructured(true)}
-            className={`px-4 py-1.5 rounded-full text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
+            className={`px-4 py-1.5 rounded-xl text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring flex items-center gap-1.5 ${
               useStructured ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
             }`}
             aria-pressed={useStructured}
             aria-label="Enable structured output mode"
           >
-            📊 Structured
+            <Sparkles className="w-3 h-3" /> Structured
           </button>
           <button
             onClick={() => setUseStructured(false)}
-            className={`px-4 py-1.5 rounded-full text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
+            className={`px-4 py-1.5 rounded-xl text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring flex items-center gap-1.5 ${
               !useStructured ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
             }`}
             aria-pressed={!useStructured}
             aria-label="Enable streaming chat mode"
           >
-            💬 Streaming
+            <MessageSquare className="w-3 h-3" /> Streaming
           </button>
         </div>
 
@@ -311,13 +329,15 @@ const ChatBox = memo(function ChatBox() {
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[85%] rounded-xl px-4 py-2.5 text-sm font-sans ${
+                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm font-sans ${
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-accent text-accent-foreground"
                     : "bg-secondary text-secondary-foreground"
                 }`}
               >
-                {msg.role === "assistant" && msg.structured ? (
+                {msg.role === "assistant" && msg.parseError ? (
+                  <ParseErrorCard errors={["Response format validation failed"]} fallbackContent={msg.content} />
+                ) : msg.role === "assistant" && msg.structured ? (
                   <StructuredResponse data={msg.structured} />
                 ) : msg.role === "assistant" ? (
                   <div className="prose prose-sm max-w-none">
@@ -326,8 +346,8 @@ const ChatBox = memo(function ChatBox() {
                 ) : (
                   msg.content
                 )}
-                {msg.confidence && msg.role === "assistant" && !msg.structured && (
-                  <span className={`${confidenceColor(msg.confidence)} mt-1 inline-block text-[10px]`}>
+                {msg.confidence && msg.role === "assistant" && !msg.structured && !msg.parseError && (
+                  <span className={`${confidenceColor(msg.confidence)} mt-2 inline-block text-[10px]`}>
                     {msg.confidence} confidence
                   </span>
                 )}
@@ -336,13 +356,21 @@ const ChatBox = memo(function ChatBox() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-secondary rounded-xl px-4 py-2.5 text-sm text-muted-foreground font-sans animate-pulse">
-                {useStructured ? "Analyzing…" : "Thinking…"}
+              <div className="bg-secondary rounded-2xl px-4 py-3 text-sm text-muted-foreground font-sans flex items-center gap-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                {loadingText}
               </div>
             </div>
           )}
           <div ref={chatEndRef} />
         </div>
+
+        {/* Confidence breakdown */}
+        {lastBreakdown && messages.length > 0 && (
+          <div className="mb-4">
+            <ConfidenceBreakdownCard breakdown={lastBreakdown} />
+          </div>
+        )}
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="flex gap-2">
@@ -353,16 +381,17 @@ const ChatBox = memo(function ChatBox() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about elections, voting, registration…"
             maxLength={500}
-            className="flex-1 px-4 py-2.5 rounded-xl border bg-card text-foreground text-sm font-sans placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 px-4 py-3 rounded-xl border bg-card text-foreground text-sm font-sans placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Type your question about elections"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium font-sans transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            className="px-5 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-medium font-sans transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 flex items-center gap-2"
             aria-label="Send question"
           >
+            <Send className="w-4 h-4" />
             Send
           </button>
         </form>

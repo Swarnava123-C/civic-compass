@@ -41,6 +41,7 @@ export interface ChatMessage {
   timestamp: Date;
   confidence?: "high" | "medium" | "low";
   structured?: StructuredAIResponse | null;
+  parseError?: boolean;
 }
 
 export interface StateInfo {
@@ -100,3 +101,17 @@ export interface StructuredAIResponse {
 }
 
 export type DetailLevel = "beginner" | "detailed";
+
+export interface UserProfile {
+  state: StateInfo | null;
+  age: number | null;
+  needsRegistrationHelp: boolean;
+  needsIdHelp: boolean;
+}
+
+export interface ConfidenceBreakdown {
+  level: "high" | "medium" | "low";
+  hasState: boolean;
+  hasProcess: boolean;
+  reasons: string[];
+}

@@ -58,6 +58,7 @@ export default {
           gold: "hsl(var(--civic-gold))",
           success: "hsl(var(--civic-success))",
           surface: "hsl(var(--civic-surface))",
+          amber: "hsl(var(--civic-amber))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -77,20 +78,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {

@@ -12,24 +12,23 @@ const VotingGuide = memo(function VotingGuide() {
   const step = VOTING_STEPS[activeStep];
 
   return (
-    <section className="py-16 px-4 bg-muted/30" aria-labelledby="guide-heading">
+    <section className="py-20 px-4 civic-gradient-subtle" aria-labelledby="guide-heading">
       <div className="container max-w-4xl mx-auto">
-        <h2 id="guide-heading" className="text-3xl font-bold text-foreground mb-2 text-center">
+        <h2 id="guide-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-center">
           Step-by-Step Voting Guide
         </h2>
-        <p className="text-muted-foreground text-center mb-10 font-sans">
+        <p className="text-muted-foreground text-center mb-12 font-sans">
           Follow the process from registration to results
         </p>
 
-        {/* Step indicators */}
         <nav className="flex justify-center gap-2 mb-8 flex-wrap" aria-label="Voting guide steps">
           {VOTING_STEPS.map((s, i) => (
             <button
               key={s.id}
               onClick={() => handleStepChange(i)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium font-sans transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+              className={`px-4 py-2 rounded-xl text-sm font-medium font-sans transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
                 i === activeStep
-                  ? "bg-primary text-primary-foreground shadow-md"
+                  ? "bg-accent text-accent-foreground shadow-md"
                   : "bg-card text-muted-foreground hover:bg-secondary border"
               }`}
               aria-current={i === activeStep ? "step" : undefined}
@@ -40,7 +39,6 @@ const VotingGuide = memo(function VotingGuide() {
           ))}
         </nav>
 
-        {/* Step content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={step.id}
@@ -67,7 +65,7 @@ const VotingGuide = memo(function VotingGuide() {
                 <ul className="space-y-2" aria-label="Official responsibilities">
                   {step.responsibilities.map((r) => (
                     <li key={r} className="text-sm text-foreground/80 flex items-start gap-2 font-sans">
-                      <span className="text-civic-sky mt-0.5" aria-hidden="true">▸</span>
+                      <span className="text-accent mt-0.5" aria-hidden="true">▸</span>
                       {r}
                     </li>
                   ))}
@@ -91,13 +89,12 @@ const VotingGuide = memo(function VotingGuide() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Progress bar */}
         <div className="mt-6 flex items-center gap-1" role="progressbar" aria-valuenow={activeStep + 1} aria-valuemin={1} aria-valuemax={VOTING_STEPS.length} aria-label="Voting guide progress">
           {VOTING_STEPS.map((_, i) => (
             <div
               key={i}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                i <= activeStep ? "bg-primary" : "bg-border"
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+                i <= activeStep ? "bg-accent" : "bg-border"
               }`}
             />
           ))}
