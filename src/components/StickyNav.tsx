@@ -1,8 +1,10 @@
 import { memo, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, BarChart3, Users, MessageSquare, Trophy, Menu, X } from "lucide-react";
+import { BookOpen, BarChart3, Users, MessageSquare, Trophy, Menu, X, Map } from "lucide-react";
 
 const NAV_ITEMS = [
+  { id: "dashboard-heading", label: "Dashboard", icon: BarChart3 },
+  { id: "map-heading", label: "Map", icon: Map },
   { id: "overview-heading", label: "Overview", icon: BookOpen },
   { id: "timeline-heading", label: "Timeline", icon: BarChart3 },
   { id: "simulator-heading", label: "Simulator", icon: Users },
@@ -50,10 +52,12 @@ const StickyNav = memo(function StickyNav() {
       className="sticky top-0 z-30 civic-glass border-b"
       aria-label="Section navigation"
     >
-      <div className="container max-w-5xl mx-auto px-4">
+      <div className="container max-w-6xl mx-auto px-4">
         {/* Desktop */}
         <div className="hidden md:flex items-center justify-between h-12">
-          <span className="text-sm font-bold text-foreground font-sans tracking-tight">CivicFlow Pro</span>
+          <span className="text-sm font-bold text-foreground font-sans tracking-tight flex items-center gap-1.5">
+            🇮🇳 CivicFlow India
+          </span>
           <div className="flex items-center gap-1">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
@@ -79,7 +83,7 @@ const StickyNav = memo(function StickyNav() {
 
         {/* Mobile */}
         <div className="md:hidden flex items-center justify-between h-12">
-          <span className="text-sm font-bold text-foreground font-sans">CivicFlow Pro</span>
+          <span className="text-sm font-bold text-foreground font-sans">🇮🇳 CivicFlow India</span>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 rounded-lg text-muted-foreground hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring"

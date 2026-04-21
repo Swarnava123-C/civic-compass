@@ -4,28 +4,28 @@ import { Vote, ListChecks, Landmark, Scale } from "lucide-react";
 
 const CARDS = [
   {
-    title: "What Are Elections?",
+    title: "Elections in India",
     icon: Vote,
     content:
-      "Elections are formal processes by which citizens choose individuals to hold public office. They are the cornerstone of representative democracy, allowing people to express their preferences for governance.",
+      "India is the world's largest democracy with over 960 million registered voters. Elections are conducted by the independent Election Commission of India (ECI) using Electronic Voting Machines (EVMs) with Voter Verifiable Paper Audit Trail (VVPAT).",
   },
   {
     title: "Types of Elections",
     icon: ListChecks,
     content:
-      "General elections choose national leaders and legislators. Local elections determine regional and municipal officials. Primaries select party candidates. Referendums let citizens vote directly on policy issues.",
+      "Lok Sabha (Parliamentary) elections are held every 5 years for 543 seats. State Assembly (Vidhan Sabha) elections choose state governments. Local body elections cover Panchayats, Municipalities, and Municipal Corporations. By-elections fill casual vacancies.",
   },
   {
     title: "Key Institutions",
     icon: Landmark,
     content:
-      "Election commissions oversee the process. Courts resolve disputes. Political parties organize candidates. Civil society and media provide oversight and transparency.",
+      "The Election Commission of India (ECI) — a constitutional body under Article 324 — supervises elections. State Chief Electoral Officers (CEOs) coordinate at state level. District Election Officers manage constituency-level operations.",
   },
   {
-    title: "Why Elections Matter",
+    title: "Why Your Vote Matters",
     icon: Scale,
     content:
-      "Elections enable peaceful transfer of power, provide government legitimacy, give citizens a voice in governance, and create accountability mechanisms for public officials.",
+      "India follows a 'first past the post' system where every vote directly impacts results. Your vote enables peaceful transfer of power, provides government legitimacy, and ensures representation for your community in the world's largest democracy.",
   },
 ];
 
@@ -43,10 +43,10 @@ const ElectionOverview = memo(function ElectionOverview() {
     <section className="py-20 px-4 civic-bg-grid" aria-labelledby="overview-heading">
       <div className="container max-w-4xl mx-auto">
         <h2 id="overview-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-center">
-          Election Overview
+          Indian Elections Overview
         </h2>
         <p className="text-muted-foreground text-center mb-12 font-sans max-w-lg mx-auto">
-          Understanding the foundations of democratic elections
+          Understanding the foundations of India's democratic electoral system
         </p>
 
         <div className="grid md:grid-cols-2 gap-5">
