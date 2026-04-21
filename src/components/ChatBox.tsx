@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Loader2, Sparkles, MessageSquare } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquare, Eye } from "lucide-react";
 import { sanitizeInput } from "@/utils/date";
 import { logger } from "@/utils/logger";
 import { trackApiLatency } from "@/utils/performance";
@@ -9,6 +9,7 @@ import { computeConfidenceBreakdown } from "@/utils/confidenceEngine";
 import StructuredResponse from "@/components/StructuredResponse";
 import ConfidenceBreakdownCard from "@/components/ConfidenceBreakdownCard";
 import ParseErrorCard from "@/components/ParseErrorCard";
+import AITransparencyPanel from "@/components/AITransparencyPanel";
 import type { ChatMessage, DetailLevel, StructuredAIResponse, UserProfile, ConfidenceBreakdown } from "@/types/civic";
 import { FAQ_ITEMS } from "@/data/civicContent";
 
@@ -47,7 +48,10 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [detailLevel, setDetailLevel] = useState<DetailLevel>("beginner");
   const [useStructured, setUseStructured] = useState(true);
+  const [simpleMode, setSimpleMode] = useState(false);
   const [lastBreakdown, setLastBreakdown] = useState<ConfidenceBreakdown | null>(null);
+  const [lastQuery, setLastQuery] = useState("");
+  const [lastStructured, setLastStructured] = useState<StructuredAIResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -69,6 +73,7 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
         parseError,
       };
       setMessages((prev) => [...prev, msg]);
+      if (structured) setLastStructured(structured);
       setTimeout(scrollToBottom, 50);
       return msg;
     },
@@ -83,6 +88,8 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
 
   const [loadingText, setLoadingText] = useState(loadingMessages[0]);
 
+  const effectiveDetailLevel = simpleMode ? "beginner" as DetailLevel : detailLevel;
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -90,6 +97,7 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
       if (!sanitized) return;
 
       setInput("");
+      setLastQuery(sanitized);
       addMessage("user", sanitized);
 
       const breakdown = computeConfidenceBreakdown(sanitized, profile);
@@ -137,7 +145,7 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
               "Content-Type": "application/json",
               Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? ""}`,
             },
-            body: JSON.stringify({ messages: allMessages, detailLevel, structured: true }),
+            body: JSON.stringify({ messages: allMessages, detailLevel: effectiveDetailLevel, structured: true, simpleMode }),
           });
 
           trackApiLatency("civic-chat-structured", startTime);
@@ -170,7 +178,7 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? ""}`,
           },
-          body: JSON.stringify({ messages: allMessages, detailLevel }),
+          body: JSON.stringify({ messages: allMessages, detailLevel: effectiveDetailLevel, simpleMode }),
         });
 
         trackApiLatency("civic-chat-stream", startTime);
@@ -242,7 +250,7 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
         setIsLoading(false);
       }
     },
-    [input, messages, addMessage, detailLevel, supabaseUrl, useStructured, profile, loadingMessages]
+    [input, messages, addMessage, effectiveDetailLevel, supabaseUrl, useStructured, profile, loadingMessages, simpleMode]
   );
 
   const confidenceColor = useCallback((c?: ChatMessage["confidence"]) => {
@@ -267,26 +275,30 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
         {/* Controls */}
         <div className="flex justify-center gap-2 mb-3 flex-wrap">
           <button
-            onClick={() => setDetailLevel("beginner")}
+            onClick={() => setSimpleMode(false)}
             className={`px-4 py-1.5 rounded-full text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
-              detailLevel === "beginner" ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
+              !simpleMode ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
             }`}
-            aria-pressed={detailLevel === "beginner"}
-            aria-label="Set detail level to beginner"
+            aria-pressed={!simpleMode}
           >
-            Beginner
+            Standard Mode
           </button>
           <button
-            onClick={() => setDetailLevel("detailed")}
-            className={`px-4 py-1.5 rounded-full text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
-              detailLevel === "detailed" ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
+            onClick={() => setSimpleMode(true)}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium font-sans transition focus:outline-none focus:ring-2 focus:ring-ring flex items-center gap-1.5 ${
+              simpleMode ? "bg-civic-gold text-foreground" : "bg-card border text-muted-foreground"
             }`}
-            aria-pressed={detailLevel === "detailed"}
-            aria-label="Set detail level to detailed"
+            aria-pressed={simpleMode}
           >
-            Detailed
+            <Eye className="w-3 h-3" /> Simple Mode
           </button>
         </div>
+
+        {simpleMode && (
+          <p className="text-xs text-center text-civic-gold font-sans mb-3">
+            ✨ Simple Mode: Explanations use plain language, short sentences, and examples
+          </p>
+        )}
 
         <div className="flex justify-center gap-2 mb-6">
           <button
@@ -295,7 +307,6 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
               useStructured ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
             }`}
             aria-pressed={useStructured}
-            aria-label="Enable structured output mode"
           >
             <Sparkles className="w-3 h-3" /> Structured
           </button>
@@ -305,7 +316,6 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
               !useStructured ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground"
             }`}
             aria-pressed={!useStructured}
-            aria-label="Enable streaming chat mode"
           >
             <MessageSquare className="w-3 h-3" /> Streaming
           </button>
@@ -365,9 +375,10 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
           <div ref={chatEndRef} />
         </div>
 
-        {/* Confidence breakdown */}
+        {/* AI Transparency Panel */}
         {lastBreakdown && messages.length > 0 && (
-          <div className="mb-4">
+          <div className="mb-4 space-y-3">
+            <AITransparencyPanel breakdown={lastBreakdown} structured={lastStructured} query={lastQuery} />
             <ConfidenceBreakdownCard breakdown={lastBreakdown} />
           </div>
         )}
