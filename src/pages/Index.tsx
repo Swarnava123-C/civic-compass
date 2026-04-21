@@ -1,9 +1,11 @@
-import { lazy, Suspense, useState, useCallback } from "react";
+import { lazy, Suspense, useState, useCallback, useMemo } from "react";
 import HeroSection from "@/components/HeroSection";
 import ElectionOverview from "@/components/ElectionOverview";
-import StateSelector from "@/components/StateSelector";
+import StickyNav from "@/components/StickyNav";
+import UserProfilePanel from "@/components/UserProfilePanel";
+import LearningRecapButton from "@/components/LearningRecapButton";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import type { StateInfo } from "@/types/civic";
+import type { StateInfo, UserProfile } from "@/types/civic";
 
 const Timeline = lazy(() => import("@/components/Timeline"));
 const VotingGuide = lazy(() => import("@/components/VotingGuide"));
@@ -20,37 +22,76 @@ function LoadingSkeleton() {
       <div className="container max-w-4xl mx-auto space-y-4">
         <div className="h-8 w-48 bg-muted animate-pulse rounded-lg mx-auto" />
         <div className="h-4 w-64 bg-muted animate-pulse rounded mx-auto" />
-        <div className="h-40 bg-muted animate-pulse rounded-xl" />
+        <div className="h-40 bg-muted animate-pulse rounded-2xl" />
       </div>
     </div>
   );
 }
 
-const Index = () => {
-  const [selectedState, setSelectedState] = useState<StateInfo | null>(null);
+const DEFAULT_PROFILE: UserProfile = {
+  state: null,
+  age: null,
+  needsRegistrationHelp: false,
+  needsIdHelp: false,
+};
 
-  const handleStateSelect = useCallback((state: StateInfo | null) => {
-    setSelectedState(state);
+const Index = () => {
+  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [quizScore, setQuizScore] = useState<number | null>(null);
+  const [quizTotal, setQuizTotal] = useState(0);
+  const [viewedScenarios, setViewedScenarios] = useState<Set<string>>(new Set());
+
+  const selectedState = profile.state;
+
+  const handleStateFromProfile = useCallback((updated: UserProfile) => {
+    setProfile(updated);
   }, []);
+
+  const handleScenarioView = useCallback((id: string) => {
+    setViewedScenarios((prev) => new Set(prev).add(id));
+  }, []);
+
+  const handleQuizComplete = useCallback((score: number, total: number) => {
+    setQuizScore(score);
+    setQuizTotal(total);
+  }, []);
+
+  const recapData = useMemo(() => ({
+    quizScore,
+    quizTotal,
+    completedScenarioIds: Array.from(viewedScenarios),
+    profile,
+  }), [quizScore, quizTotal, viewedScenarios, profile]);
 
   return (
     <main className="min-h-screen bg-background">
       <ErrorBoundary>
         <HeroSection />
+        <StickyNav />
 
-        {/* State selector bar */}
-        <div className="border-b bg-card py-3 px-4 sticky top-0 z-10">
-          <div className="container max-w-4xl mx-auto flex items-center justify-between flex-wrap gap-3">
-            <StateSelector selectedState={selectedState} onSelect={handleStateSelect} />
-            {selectedState && (
-              <span className="civic-badge-info font-sans">
-                Viewing info for {selectedState.name}
-              </span>
-            )}
+        {/* Profile + Controls bar */}
+        <div className="py-4 px-4">
+          <div className="container max-w-4xl mx-auto space-y-3">
+            <UserProfilePanel
+              profile={profile}
+              onUpdate={handleStateFromProfile}
+              isOpen={profileOpen}
+              onToggle={() => setProfileOpen(!profileOpen)}
+            />
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              {selectedState && (
+                <span className="civic-badge-info font-sans">
+                  Viewing info for {selectedState.name}
+                </span>
+              )}
+              <LearningRecapButton recapData={recapData} />
+            </div>
           </div>
         </div>
 
-        {/* State-specific info panel */}
+        <div className="civic-section-divider" />
+
         {selectedState && (
           <Suspense fallback={<LoadingSkeleton />}>
             <StateInfoPanel selectedState={selectedState} />
@@ -58,37 +99,44 @@ const Index = () => {
         )}
 
         <ElectionOverview />
+        <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
           <Timeline />
         </Suspense>
+        <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
           <VotingGuide />
         </Suspense>
+        <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
-          <ScenarioSimulator />
+          <ScenarioSimulator onScenarioView={handleScenarioView} />
         </Suspense>
+        <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
           <GovernmentStructure />
         </Suspense>
+        <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
           <FAQSection />
         </Suspense>
+        <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
-          <ChatBox />
+          <ChatBox profile={profile} />
         </Suspense>
+        <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
-          <CivicQuiz />
+          <CivicQuiz onComplete={handleQuizComplete} />
         </Suspense>
 
         {/* Footer */}
-        <footer className="py-8 px-4 border-t bg-card" role="contentinfo">
+        <footer className="py-10 px-4 border-t bg-card" role="contentinfo">
           <div className="container max-w-4xl mx-auto text-center">
             <p className="text-sm text-muted-foreground font-sans">
               <strong>Disclaimer:</strong> CivicFlow Pro is an educational tool and is not an official government source.

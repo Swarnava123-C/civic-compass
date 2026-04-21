@@ -6,42 +6,43 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 40% 13%;
+    --background: 220 25% 97%;
+    --foreground: 216 50% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 40% 13%;
+    --card-foreground: 216 50% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 40% 13%;
+    --popover-foreground: 216 50% 12%;
 
-    --primary: 220 60% 35%;
+    --primary: 222 62% 14%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 30% 92%;
-    --secondary-foreground: 220 40% 13%;
+    --secondary: 214 32% 93%;
+    --secondary-foreground: 216 50% 12%;
 
-    --muted: 220 15% 94%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 220 18% 94%;
+    --muted-foreground: 220 12% 46%;
 
-    --accent: 195 70% 42%;
+    --accent: 217 72% 41%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 88%;
-    --input: 220 15% 88%;
-    --ring: 220 60% 35%;
+    --border: 220 16% 90%;
+    --input: 220 16% 90%;
+    --ring: 217 72% 41%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    --civic-navy: 220 60% 20%;
-    --civic-blue: 220 60% 35%;
-    --civic-sky: 195 70% 42%;
-    --civic-gold: 42 90% 55%;
-    --civic-success: 152 60% 40%;
-    --civic-surface: 220 20% 97%;
+    --civic-navy: 222 62% 14%;
+    --civic-blue: 222 60% 32%;
+    --civic-sky: 217 72% 41%;
+    --civic-gold: 43 96% 56%;
+    --civic-success: 160 64% 43%;
+    --civic-surface: 220 25% 97%;
+    --civic-amber: 38 92% 50%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -54,40 +55,41 @@
   }
 
   .dark {
-    --background: 220 30% 8%;
+    --background: 222 40% 6%;
     --foreground: 210 20% 92%;
 
-    --card: 220 30% 12%;
+    --card: 222 35% 10%;
     --card-foreground: 210 20% 92%;
 
-    --popover: 220 30% 12%;
+    --popover: 222 35% 10%;
     --popover-foreground: 210 20% 92%;
 
-    --primary: 210 50% 55%;
+    --primary: 217 65% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 18%;
+    --secondary: 222 25% 16%;
     --secondary-foreground: 210 20% 92%;
 
-    --muted: 220 20% 18%;
+    --muted: 222 20% 16%;
     --muted-foreground: 215 15% 60%;
 
-    --accent: 195 60% 50%;
+    --accent: 217 60% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 210 50% 55%;
+    --border: 222 20% 18%;
+    --input: 222 20% 18%;
+    --ring: 217 65% 55%;
 
-    --civic-navy: 220 40% 70%;
-    --civic-blue: 210 50% 55%;
-    --civic-sky: 195 60% 50%;
-    --civic-gold: 42 80% 60%;
-    --civic-success: 152 50% 50%;
-    --civic-surface: 220 30% 10%;
+    --civic-navy: 222 30% 70%;
+    --civic-blue: 217 50% 55%;
+    --civic-sky: 217 60% 50%;
+    --civic-gold: 43 80% 60%;
+    --civic-success: 160 50% 50%;
+    --civic-surface: 222 30% 8%;
+    --civic-amber: 38 80% 55%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -117,11 +119,19 @@
 
 @layer components {
   .civic-gradient {
-    background: linear-gradient(135deg, hsl(var(--civic-navy)), hsl(var(--civic-blue)));
+    background: linear-gradient(135deg, hsl(222 62% 14%), hsl(217 72% 41%));
+  }
+
+  .civic-gradient-subtle {
+    background: linear-gradient(180deg, hsl(var(--civic-navy) / 0.03), transparent);
   }
 
   .civic-card {
-    @apply bg-card rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-300;
+    @apply bg-card rounded-2xl border shadow-sm transition-all duration-300;
+  }
+
+  .civic-card-hover {
+    @apply civic-card hover:shadow-lg hover:-translate-y-0.5 hover:border-accent/20;
   }
 
   .civic-badge {
@@ -129,7 +139,7 @@
   }
 
   .civic-badge-info {
-    @apply civic-badge bg-primary/10 text-primary;
+    @apply civic-badge bg-accent/10 text-accent;
   }
 
   .civic-badge-success {
@@ -140,7 +150,42 @@
 
   .civic-badge-gold {
     @apply civic-badge;
-    background: hsl(var(--civic-gold) / 0.1);
+    background: hsl(var(--civic-gold) / 0.15);
     color: hsl(var(--civic-gold));
+  }
+
+  .civic-badge-amber {
+    @apply civic-badge;
+    background: hsl(var(--civic-amber) / 0.12);
+    color: hsl(var(--civic-amber));
+  }
+
+  .civic-section-divider {
+    @apply w-full h-px;
+    background: linear-gradient(90deg, transparent, hsl(var(--border)), transparent);
+  }
+
+  .civic-glass {
+    @apply backdrop-blur-xl bg-card/80 border border-border/50;
+  }
+
+  .civic-glow-primary {
+    box-shadow: 0 0 20px hsl(var(--civic-sky) / 0.15);
+  }
+
+  .civic-bg-grid {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+@layer utilities {
+  @media (prefers-reduced-motion: reduce) {
+    .motion-safe\:animate-fade-in,
+    .motion-safe\:animate-slide-up {
+      animation: none !important;
+    }
   }
 }

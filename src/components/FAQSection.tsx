@@ -1,5 +1,6 @@
 import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import { FAQ_ITEMS } from "@/data/civicContent";
 
 const FAQSection = memo(function FAQSection() {
@@ -10,9 +11,9 @@ const FAQSection = memo(function FAQSection() {
   }, []);
 
   return (
-    <section className="py-16 px-4" aria-labelledby="faq-heading">
+    <section className="py-20 px-4" aria-labelledby="faq-heading">
       <div className="container max-w-3xl mx-auto">
-        <h2 id="faq-heading" className="text-3xl font-bold text-foreground mb-2 text-center">
+        <h2 id="faq-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-center">
           Election FAQ
         </h2>
         <p className="text-muted-foreground text-center mb-10 font-sans">
@@ -21,9 +22,17 @@ const FAQSection = memo(function FAQSection() {
 
         <div className="space-y-3" role="list">
           {FAQ_ITEMS.map((item, i) => (
-            <div key={item.question} className="civic-card overflow-hidden" role="listitem">
+            <motion.div
+              key={item.question}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.05 }}
+              className="civic-card overflow-hidden"
+              role="listitem"
+            >
               <button
-                className="w-full p-5 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-ring rounded-xl"
+                className="w-full p-5 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-ring rounded-2xl"
                 onClick={() => toggle(i)}
                 aria-expanded={openIndex === i}
                 aria-controls={`faq-answer-${i}`}
@@ -32,9 +41,7 @@ const FAQSection = memo(function FAQSection() {
                   <span className="civic-badge-info font-sans text-xs">{item.category}</span>
                   <span className="text-sm font-medium text-foreground font-sans">{item.question}</span>
                 </div>
-                <span className="text-muted-foreground text-lg" aria-hidden="true">
-                  {openIndex === i ? "−" : "+"}
-                </span>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${openIndex === i ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {openIndex === i && (
@@ -52,7 +59,7 @@ const FAQSection = memo(function FAQSection() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
