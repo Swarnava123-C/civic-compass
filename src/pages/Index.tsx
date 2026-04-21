@@ -7,9 +7,12 @@ import type { StateInfo } from "@/types/civic";
 
 const Timeline = lazy(() => import("@/components/Timeline"));
 const VotingGuide = lazy(() => import("@/components/VotingGuide"));
+const ScenarioSimulator = lazy(() => import("@/components/ScenarioSimulator"));
+const GovernmentStructure = lazy(() => import("@/components/GovernmentStructure"));
 const FAQSection = lazy(() => import("@/components/FAQSection"));
 const ChatBox = lazy(() => import("@/components/ChatBox"));
 const CivicQuiz = lazy(() => import("@/components/CivicQuiz"));
+const StateInfoPanel = lazy(() => import("@/components/StateInfoPanel"));
 
 function LoadingSkeleton() {
   return (
@@ -36,7 +39,7 @@ const Index = () => {
         <HeroSection />
 
         {/* State selector bar */}
-        <div className="border-b bg-card py-3 px-4">
+        <div className="border-b bg-card py-3 px-4 sticky top-0 z-10">
           <div className="container max-w-4xl mx-auto flex items-center justify-between flex-wrap gap-3">
             <StateSelector selectedState={selectedState} onSelect={handleStateSelect} />
             {selectedState && (
@@ -47,6 +50,13 @@ const Index = () => {
           </div>
         </div>
 
+        {/* State-specific info panel */}
+        {selectedState && (
+          <Suspense fallback={<LoadingSkeleton />}>
+            <StateInfoPanel selectedState={selectedState} />
+          </Suspense>
+        )}
+
         <ElectionOverview />
 
         <Suspense fallback={<LoadingSkeleton />}>
@@ -55,6 +65,14 @@ const Index = () => {
 
         <Suspense fallback={<LoadingSkeleton />}>
           <VotingGuide />
+        </Suspense>
+
+        <Suspense fallback={<LoadingSkeleton />}>
+          <ScenarioSimulator />
+        </Suspense>
+
+        <Suspense fallback={<LoadingSkeleton />}>
+          <GovernmentStructure />
         </Suspense>
 
         <Suspense fallback={<LoadingSkeleton />}>
@@ -73,11 +91,11 @@ const Index = () => {
         <footer className="py-8 px-4 border-t bg-card" role="contentinfo">
           <div className="container max-w-4xl mx-auto text-center">
             <p className="text-sm text-muted-foreground font-sans">
-              <strong>Disclaimer:</strong> CivicFlow is an educational tool and is not an official government source.
+              <strong>Disclaimer:</strong> CivicFlow Pro is an educational tool and is not an official government source.
               Always verify election information with your local election authority.
             </p>
             <p className="text-xs text-muted-foreground font-sans mt-2">
-              © {new Date().getFullYear()} CivicFlow — Civic Education Platform
+              © {new Date().getFullYear()} CivicFlow Pro — Interactive Civic Education & Election Process Intelligence Platform
             </p>
           </div>
         </footer>
