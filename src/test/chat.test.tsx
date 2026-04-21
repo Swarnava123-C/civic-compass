@@ -13,14 +13,14 @@ describe("ChatBox", () => {
     expect(screen.getByRole("button", { name: /send/i })).toBeInTheDocument();
   });
 
-  it("renders detail level toggles", () => {
+  it("renders mode toggles", () => {
     render(<ChatBox />);
-    expect(screen.getByRole("button", { name: /beginner/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /detailed/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /standard mode/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /simple mode/i })).toBeInTheDocument();
   });
 
   it("renders disclaimer", () => {
     render(<ChatBox />);
-    expect(screen.getByText(/not an official government source/i)).toBeInTheDocument();
+    expect(screen.getByText(/not affiliated with the election commission/i)).toBeInTheDocument();
   });
 });
