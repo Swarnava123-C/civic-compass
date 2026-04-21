@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, ChevronDown, ChevronUp, MapPin, Calendar, HelpCircle } from "lucide-react";
-import { US_STATES } from "@/data/civicContent";
+import { INDIA_STATES_LIST } from "@/data/civicContent";
 import type { UserProfile, StateInfo } from "@/types/civic";
 
 interface UserProfilePanelProps {
@@ -15,7 +15,7 @@ const UserProfilePanel = memo(function UserProfilePanel({ profile, onUpdate, isO
   const handleStateChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const code = e.target.value;
-      const state: StateInfo | null = code ? US_STATES.find((s) => s.code === code) ?? null : null;
+      const state: StateInfo | null = code ? INDIA_STATES_LIST.find((s) => s.code === code) ?? null : null;
       onUpdate({ ...profile, state });
     },
     [profile, onUpdate]
@@ -63,7 +63,7 @@ const UserProfilePanel = memo(function UserProfilePanel({ profile, onUpdate, isO
                 <div>
                   <label htmlFor="profile-state" className="text-xs font-medium text-foreground font-sans flex items-center gap-1.5 mb-1.5">
                     <MapPin className="w-3.5 h-3.5 text-accent" />
-                    Your State
+                    Your State / UT
                   </label>
                   <select
                     id="profile-state"
@@ -71,8 +71,8 @@ const UserProfilePanel = memo(function UserProfilePanel({ profile, onUpdate, isO
                     onChange={handleStateChange}
                     className="w-full px-3 py-2 rounded-xl border bg-background text-foreground text-sm font-sans focus:outline-none focus:ring-2 focus:ring-ring"
                   >
-                    <option value="">Select state…</option>
-                    {US_STATES.map((s) => (
+                    <option value="">Select State / Union Territory (India)</option>
+                    {INDIA_STATES_LIST.map((s) => (
                       <option key={s.code} value={s.code}>{s.name}</option>
                     ))}
                   </select>
@@ -117,14 +117,14 @@ const UserProfilePanel = memo(function UserProfilePanel({ profile, onUpdate, isO
                     }`}
                     aria-pressed={profile.needsIdHelp}
                   >
-                    ID / Identification
+                    Voter ID (EPIC)
                   </button>
                 </div>
               </div>
 
               {profile.age !== null && profile.age < 18 && (
                 <div className="p-3 rounded-xl bg-civic-gold/10 text-xs text-foreground font-sans">
-                  <strong>Note:</strong> You must be at least 18 by Election Day to vote. Some states allow 17-year-olds to vote in primaries.
+                  <strong>Note:</strong> You must be at least 18 years old on the qualifying date (1st January of the revision year) to register as a voter in India.
                 </div>
               )}
             </div>
