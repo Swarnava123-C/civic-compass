@@ -21,13 +21,36 @@ RULES:
 - Keep responses informational and educational.
 - This is for educational purposes only, not an official government source.`;
 
+const STRUCTURED_TOOL = {
+  type: "function" as const,
+  function: {
+    name: "civic_response",
+    description: "Return a structured civic education response with clear sections.",
+    parameters: {
+      type: "object",
+      properties: {
+        summary: { type: "string", description: "A brief 1-2 sentence summary of the answer." },
+        timeline_stage: { type: "string", description: "Which election timeline stage this relates to (e.g., Registration, Campaign, Voting, Counting, Results), or empty if not applicable." },
+        steps: { type: "array", items: { type: "string" }, description: "Ordered action steps the citizen should take, if applicable." },
+        documents_required: { type: "array", items: { type: "string" }, description: "Documents or forms needed, if applicable." },
+        eligibility_rules: { type: "array", items: { type: "string" }, description: "Eligibility requirements, if applicable." },
+        deadlines: { type: "string", description: "Relevant deadlines, if applicable." },
+        official_links: { type: "array", items: { type: "string" }, description: "Official government resource URLs, if applicable." },
+        warnings: { type: "array", items: { type: "string" }, description: "Important warnings or caveats." },
+        confidence_score: { type: "string", enum: ["high", "medium", "low"], description: "How confident you are in this answer. High = specific process + specific jurisdiction. Medium = specific topic but general. Low = vague or ambiguous question." },
+      },
+      required: ["summary", "confidence_score"],
+    },
+  },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, detailLevel } = await req.json();
+    const { messages, detailLevel, structured } = await req.json();
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: "Messages array is required" }), {
@@ -36,7 +59,6 @@ serve(async (req) => {
       });
     }
 
-    // Validate message length
     for (const msg of messages) {
       if (typeof msg.content !== "string" || msg.content.length > 500) {
         return new Response(JSON.stringify({ error: "Each message must be a string under 500 characters" }), {
@@ -56,6 +78,67 @@ serve(async (req) => {
         ? "Provide detailed, comprehensive explanations suitable for someone with some civic knowledge."
         : "Provide simple, beginner-friendly explanations. Use short sentences and avoid jargon.";
 
+    // Structured mode: use tool calling for JSON output
+    if (structured) {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: `${SYSTEM_PROMPT}\n\n${levelInstruction}` },
+            ...messages,
+          ],
+          tools: [STRUCTURED_TOOL],
+          tool_choice: { type: "function", function: { name: "civic_response" } },
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limited. Please try again later." }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ error: "Service temporarily unavailable." }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const t = await response.text();
+        console.error("AI gateway error:", response.status, t);
+        return new Response(JSON.stringify({ error: "AI gateway error" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const data = await response.json();
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        try {
+          const parsed = JSON.parse(toolCall.function.arguments);
+          return new Response(JSON.stringify({ structured: parsed }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        } catch {
+          // Fallback to raw content
+          const content = data.choices?.[0]?.message?.content || "Unable to parse structured response.";
+          return new Response(JSON.stringify({ content }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      const content = data.choices?.[0]?.message?.content || "Unable to generate response.";
+      return new Response(JSON.stringify({ content }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Streaming mode (default)
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -75,21 +158,18 @@ serve(async (req) => {
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "Service temporarily unavailable." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
       return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
