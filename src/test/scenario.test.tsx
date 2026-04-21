@@ -12,12 +12,13 @@ describe("ScenarioSimulator", () => {
     expect(scenarioButtons.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("expands scenario on click and shows steps", async () => {
+  it("expands scenario on click and shows step content", async () => {
     const user = userEvent.setup();
     render(<ScenarioSimulator />);
     const scenarioButtons = screen.getAllByRole("button").filter(b => b.getAttribute("aria-pressed") !== null);
     await user.click(scenarioButtons[0]);
-    expect(screen.getByText("Action Steps")).toBeInTheDocument();
+    // expanded scenario shows step details
+    expect(screen.getByText(/step 1/i)).toBeInTheDocument();
   });
 
   it("switches to a different scenario", async () => {
