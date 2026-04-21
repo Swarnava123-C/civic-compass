@@ -5,6 +5,10 @@ export interface TimelineStage {
   icon: string;
   details: string[];
   duration: string;
+  whoIsInvolved?: string[];
+  legalSignificance?: string;
+  citizenRole?: string;
+  requiredDocuments?: string[];
 }
 
 export interface VotingStep {
@@ -36,11 +40,63 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   confidence?: "high" | "medium" | "low";
+  structured?: StructuredAIResponse | null;
 }
 
 export interface StateInfo {
   name: string;
   code: string;
+}
+
+export interface StateDetail {
+  code: string;
+  electionAuthority: string;
+  electionAuthorityUrl: string;
+  registrationPortal: string;
+  votingAge: number;
+  nextElection: string;
+  notes: string;
+}
+
+export interface Scenario {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  steps: ScenarioStep[];
+  requiredForms?: string[];
+  deadlines?: string;
+  whereToApply?: string;
+  warnings?: string[];
+  officialResources?: string[];
+}
+
+export interface ScenarioStep {
+  step: number;
+  title: string;
+  description: string;
+}
+
+export interface GovernmentBranch {
+  id: string;
+  name: string;
+  icon: string;
+  role: string;
+  powers: string[];
+  examples: string[];
+  checksAndBalances: string[];
+}
+
+export interface StructuredAIResponse {
+  summary: string;
+  timeline_stage?: string;
+  steps?: string[];
+  documents_required?: string[];
+  eligibility_rules?: string[];
+  deadlines?: string;
+  official_links?: string[];
+  warnings?: string[];
+  confidence_score?: string;
 }
 
 export type DetailLevel = "beginner" | "detailed";
