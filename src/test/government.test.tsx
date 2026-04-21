@@ -7,9 +7,9 @@ describe("GovernmentStructure", () => {
   it("renders heading and all three branches", () => {
     render(<GovernmentStructure />);
     expect(screen.getByText("Government Structure")).toBeInTheDocument();
-    expect(screen.getByText("Executive Branch")).toBeInTheDocument();
-    expect(screen.getByText("Legislative Branch")).toBeInTheDocument();
-    expect(screen.getByText("Judicial Branch")).toBeInTheDocument();
+    expect(screen.getByText(/Executive/)).toBeInTheDocument();
+    expect(screen.getByText(/Legislature/)).toBeInTheDocument();
+    expect(screen.getByText(/Judiciary/)).toBeInTheDocument();
   });
 
   it("expands branch on click showing powers and checks", async () => {
@@ -17,7 +17,7 @@ describe("GovernmentStructure", () => {
     render(<GovernmentStructure />);
 
     const buttons = screen.getAllByRole("button");
-    const execBtn = buttons.find(b => b.getAttribute("aria-label")?.includes("Executive Branch"));
+    const execBtn = buttons.find(b => b.getAttribute("aria-label")?.includes("Executive"));
     expect(execBtn).toBeDefined();
     await user.click(execBtn!);
 

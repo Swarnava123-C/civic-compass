@@ -1,8 +1,8 @@
 import { memo, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
 import { TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react";
-import { HISTORICAL_DATA, type StateHistoricalData } from "@/data/historicalData";
+import { HISTORICAL_DATA, getHistoricalDataForState, type StateHistoricalData } from "@/data/historicalData";
 import type { StateInfo } from "@/types/civic";
 
 interface Props {
@@ -16,19 +16,28 @@ const TrendArrow = memo(function TrendArrow({ value }: { value: number }) {
 });
 
 const HistoricalComparison = memo(function HistoricalComparison({ selectedState }: Props) {
-  const data: StateHistoricalData | null = useMemo(() => {
-    if (!selectedState) return HISTORICAL_DATA[0];
-    return HISTORICAL_DATA.find((d) => d.stateCode === selectedState.code) ?? null;
-  }, [selectedState]);
-
   const [viewState, setViewState] = useState<string>(HISTORICAL_DATA[0]?.stateCode ?? "UP");
 
-  const activeData = useMemo(() => {
-    if (data) return data;
-    return HISTORICAL_DATA.find((d) => d.stateCode === viewState) ?? HISTORICAL_DATA[0];
-  }, [data, viewState]);
+  // When a state is selected from map, use its data; otherwise use the manual selector
+  const activeData: StateHistoricalData | null = useMemo(() => {
+    if (selectedState) {
+      return getHistoricalDataForState(selectedState.code);
+    }
+    return getHistoricalDataForState(viewState);
+  }, [selectedState, viewState]);
 
-  if (!activeData) return null;
+  if (!activeData) {
+    return (
+      <section className="py-16 px-4" aria-labelledby="historical-heading">
+        <div className="container max-w-5xl mx-auto text-center">
+          <h2 id="historical-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-2">📊 Election Trends</h2>
+          <p className="text-muted-foreground font-sans text-sm">
+            {selectedState ? `Historical data not available for ${selectedState.name} yet.` : "Select a state to view trends."}
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   const elections = activeData.elections;
   const latest = elections[elections.length - 1];
@@ -42,6 +51,7 @@ const HistoricalComparison = memo(function HistoricalComparison({ selectedState 
     turnout: e.turnoutPercent,
   }));
 
+  // Build seat comparison — handle party names changing across elections
   const seatComparison = elections.map((e) => ({
     year: e.year.toString(),
     [e.topParty]: e.topPartySeats,
@@ -49,11 +59,18 @@ const HistoricalComparison = memo(function HistoricalComparison({ selectedState 
     Others: e.totalSeats - e.topPartySeats - e.majorOppositionSeats,
   }));
 
+  // Collect all unique party names for bar chart
+  const allParties = new Set<string>();
+  elections.forEach((e) => { allParties.add(e.topParty); allParties.add(e.majorOpposition); });
+  allParties.delete("Others");
+  const partyList = Array.from(allParties);
+  const PARTY_COLORS = ["hsl(217, 72%, 41%)", "hsl(160, 64%, 43%)", "hsl(40, 90%, 55%)", "hsl(280, 60%, 55%)"];
+
   return (
     <section className="py-16 px-4" aria-labelledby="historical-heading">
       <div className="container max-w-5xl mx-auto">
         <h2 id="historical-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-2 text-center">
-          📊 Election Trends
+          📊 Election Trends — {activeData.stateName}
         </h2>
         <p className="text-muted-foreground text-center mb-6 font-sans text-sm">
           Historical comparison of election outcomes — factual data only
@@ -66,7 +83,7 @@ const HistoricalComparison = memo(function HistoricalComparison({ selectedState 
                 key={d.stateCode}
                 onClick={() => setViewState(d.stateCode)}
                 className={`px-3 py-1.5 rounded-full text-xs font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
-                  viewState === d.stateCode && !selectedState ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground hover:bg-muted"
+                  viewState === d.stateCode ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground hover:bg-muted"
                 }`}
                 aria-pressed={viewState === d.stateCode}
               >
@@ -113,7 +130,7 @@ const HistoricalComparison = memo(function HistoricalComparison({ selectedState 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Turnout Trend */}
           <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="civic-card p-5">
-            <h3 className="text-sm font-semibold text-foreground font-sans mb-4">Turnout Trend (%)</h3>
+            <h3 className="text-sm font-semibold text-foreground font-sans mb-4">Turnout Trend (%) — {activeData.stateName}</h3>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={turnoutTrend}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -127,15 +144,16 @@ const HistoricalComparison = memo(function HistoricalComparison({ selectedState 
 
           {/* Seat Distribution */}
           <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="civic-card p-5">
-            <h3 className="text-sm font-semibold text-foreground font-sans mb-4">Seat Distribution Over Elections</h3>
+            <h3 className="text-sm font-semibold text-foreground font-sans mb-4">Seat Distribution — {activeData.stateName}</h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={seatComparison}>
                 <XAxis dataKey="year" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", fontSize: "12px" }} />
                 <Legend wrapperStyle={{ fontSize: "11px" }} />
-                <Bar dataKey={latest.topParty} fill="hsl(217, 72%, 41%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey={latest.majorOpposition} fill="hsl(160, 64%, 43%)" radius={[4, 4, 0, 0]} />
+                {partyList.map((party, idx) => (
+                  <Bar key={party} dataKey={party} fill={PARTY_COLORS[idx % PARTY_COLORS.length]} radius={[4, 4, 0, 0]} />
+                ))}
                 <Bar dataKey="Others" fill="hsl(220, 15%, 75%)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -146,11 +164,11 @@ const HistoricalComparison = memo(function HistoricalComparison({ selectedState 
         {previous && (
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="civic-card p-4 mt-6">
             <h3 className="text-sm font-semibold text-foreground font-sans mb-2 flex items-center gap-2">
-              <ArrowRight className="w-4 h-4 text-accent" /> Trend Explanation
+              <ArrowRight className="w-4 h-4 text-accent" /> Trend Explanation — {activeData.stateName}
             </h3>
             <ul className="text-xs text-muted-foreground font-sans space-y-1">
               <li>• Turnout {turnoutChange >= 0 ? "increased" : "decreased"} by {Math.abs(turnoutChange).toFixed(1)}% compared to the {previous.year} election.</li>
-              <li>• {latest.topParty} {seatChange >= 0 ? "gained" : "lost"} {Math.abs(seatChange)} seats compared to {previous.topParty}'s {previous.topPartySeats} seats in {previous.year}.</li>
+              <li>• {latest.topParty} won {latest.topPartySeats} seats in {latest.year} vs {previous.topParty}'s {previous.topPartySeats} in {previous.year}.</li>
               <li>• {latest.topPartySeats >= Math.floor(latest.totalSeats / 2) + 1 ? "An outright majority was achieved." : "No single party achieved an outright majority."}</li>
             </ul>
           </motion.div>

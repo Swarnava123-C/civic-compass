@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, memo, useMemo } from "react";
+import { useState, useCallback, useRef, memo, useMemo, lazy, Suspense } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Loader2, Sparkles, MessageSquare, Eye } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquare, Eye, Volume2 } from "lucide-react";
 import { sanitizeInput } from "@/utils/date";
 import { logger } from "@/utils/logger";
 import { trackApiLatency } from "@/utils/performance";
@@ -10,8 +10,11 @@ import StructuredResponse from "@/components/StructuredResponse";
 import ConfidenceBreakdownCard from "@/components/ConfidenceBreakdownCard";
 import ParseErrorCard from "@/components/ParseErrorCard";
 import AITransparencyPanel from "@/components/AITransparencyPanel";
-import type { ChatMessage, DetailLevel, StructuredAIResponse, UserProfile, ConfidenceBreakdown } from "@/types/civic";
+import CitationsPanel from "@/components/CitationsPanel";
+import type { ChatMessage, DetailLevel, StructuredAIResponse, UserProfile, ConfidenceBreakdown, StateInfo } from "@/types/civic";
 import { FAQ_ITEMS } from "@/data/civicContent";
+
+const VoiceControls = lazy(() => import("@/voice/VoiceControls"));
 
 const PARTISAN_REFUSAL =
   "I provide information about the election process but cannot recommend candidates, predict outcomes, or give voting advice.";
@@ -40,9 +43,10 @@ function findLocalAnswer(input: string): string | null {
 
 interface ChatBoxProps {
   profile?: UserProfile | null;
+  selectedState?: StateInfo | null;
 }
 
-const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
+const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -89,6 +93,10 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
   const [loadingText, setLoadingText] = useState(loadingMessages[0]);
 
   const effectiveDetailLevel = simpleMode ? "beginner" as DetailLevel : detailLevel;
+
+  const handleVoiceTranscript = useCallback((text: string) => {
+    setInput(text);
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -268,9 +276,16 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
         <h2 id="chat-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-center">
           Guided Civic Assistant
         </h2>
-        <p className="text-muted-foreground text-center mb-6 font-sans">
+        <p className="text-muted-foreground text-center mb-4 font-sans">
           AI-powered Q&A — factual, non-partisan, with structured intelligence
         </p>
+
+        {/* Voice Controls */}
+        <div className="flex justify-center mb-4">
+          <Suspense fallback={null}>
+            <VoiceControls selectedState={selectedState ?? null} onTranscript={handleVoiceTranscript} />
+          </Suspense>
+        </div>
 
         {/* Controls */}
         <div className="flex justify-center gap-2 mb-3 flex-wrap">
@@ -375,10 +390,11 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
           <div ref={chatEndRef} />
         </div>
 
-        {/* AI Transparency Panel */}
+        {/* AI Transparency + Citations */}
         {lastBreakdown && messages.length > 0 && (
           <div className="mb-4 space-y-3">
             <AITransparencyPanel breakdown={lastBreakdown} structured={lastStructured} query={lastQuery} />
+            <CitationsPanel query={lastQuery} structured={lastStructured} breakdown={lastBreakdown} />
             <ConfidenceBreakdownCard breakdown={lastBreakdown} />
           </div>
         )}

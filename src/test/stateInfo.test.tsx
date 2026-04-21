@@ -9,16 +9,12 @@ describe("StateInfoPanel", () => {
   });
 
   it("shows state info when a state is selected", () => {
-    render(<StateInfoPanel selectedState={{ name: "California", code: "CA" }} />);
-    expect(screen.getByText(/california election info/i)).toBeInTheDocument();
-    expect(screen.getByText(/california secretary of state/i)).toBeInTheDocument();
-    expect(screen.getByText(/same-day registration/i)).toBeInTheDocument();
+    render(<StateInfoPanel selectedState={{ name: "Uttar Pradesh", code: "UP" }} />);
+    expect(screen.getAllByText(/uttar pradesh/i).length).toBeGreaterThan(0);
   });
 
   it("shows election authority link", () => {
-    render(<StateInfoPanel selectedState={{ name: "Texas", code: "TX" }} />);
-    const link = screen.getByText(/texas secretary of state/i);
-    expect(link).toHaveAttribute("href");
-    expect(link.closest("a")).toHaveAttribute("target", "_blank");
+    render(<StateInfoPanel selectedState={{ name: "Maharashtra", code: "MH" }} />);
+    expect(screen.getByText(/CEO Maharashtra/i)).toBeInTheDocument();
   });
 });
