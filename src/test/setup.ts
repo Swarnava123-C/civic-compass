@@ -29,6 +29,10 @@ Object.defineProperty(window, "IntersectionObserver", {
   value: MockIntersectionObserver,
 });
 
+// Mock scrollIntoView
+Element.prototype.scrollIntoView = () => {};
+
+
 // Mock ResizeObserver
 class MockResizeObserver {
   observe() {}
