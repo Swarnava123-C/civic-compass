@@ -7,6 +7,8 @@ import LearningRecapButton from "@/components/LearningRecapButton";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import type { StateInfo, UserProfile } from "@/types/civic";
 
+const IndiaMap = lazy(() => import("@/components/IndiaMap"));
+const ElectionDashboard = lazy(() => import("@/components/ElectionDashboard"));
 const Timeline = lazy(() => import("@/components/Timeline"));
 const VotingGuide = lazy(() => import("@/components/VotingGuide"));
 const ScenarioSimulator = lazy(() => import("@/components/ScenarioSimulator"));
@@ -48,6 +50,10 @@ const Index = () => {
     setProfile(updated);
   }, []);
 
+  const handleMapSelect = useCallback((state: StateInfo | null) => {
+    setProfile((prev) => ({ ...prev, state }));
+  }, []);
+
   const handleScenarioView = useCallback((id: string) => {
     setViewedScenarios((prev) => new Set(prev).add(id));
   }, []);
@@ -72,7 +78,7 @@ const Index = () => {
 
         {/* Profile + Controls bar */}
         <div className="py-4 px-4">
-          <div className="container max-w-4xl mx-auto space-y-3">
+          <div className="container max-w-5xl mx-auto space-y-3">
             <UserProfilePanel
               profile={profile}
               onUpdate={handleStateFromProfile}
@@ -90,6 +96,18 @@ const Index = () => {
           </div>
         </div>
 
+        <div className="civic-section-divider" />
+
+        {/* Dashboard — always visible */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <ElectionDashboard selectedState={selectedState} />
+        </Suspense>
+        <div className="civic-section-divider" />
+
+        {/* India Map */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <IndiaMap selectedState={selectedState} onSelectState={handleMapSelect} />
+        </Suspense>
         <div className="civic-section-divider" />
 
         {selectedState && (
@@ -139,11 +157,13 @@ const Index = () => {
         <footer className="py-10 px-4 border-t bg-card" role="contentinfo">
           <div className="container max-w-4xl mx-auto text-center">
             <p className="text-sm text-muted-foreground font-sans">
-              <strong>Disclaimer:</strong> CivicFlow Pro is an educational tool and is not an official government source.
-              Always verify election information with your local election authority.
+              <strong>Disclaimer:</strong> CivicFlow India is an informational civic education platform.
+              It is <strong>not affiliated with the Election Commission of India</strong>.
+              Always verify election information at{" "}
+              <a href="https://eci.gov.in" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">eci.gov.in</a>.
             </p>
             <p className="text-xs text-muted-foreground font-sans mt-2">
-              © {new Date().getFullYear()} CivicFlow Pro — Interactive Civic Education & Election Process Intelligence Platform
+              © {new Date().getFullYear()} CivicFlow India — Interactive Civic Intelligence Platform for Indian Elections
             </p>
           </div>
         </footer>

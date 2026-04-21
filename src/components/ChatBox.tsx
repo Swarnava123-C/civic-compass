@@ -397,7 +397,8 @@ const ChatBox = memo(function ChatBox({ profile }: ChatBoxProps) {
         </form>
 
         <p className="text-xs text-muted-foreground text-center mt-3 font-sans">
-          ⚠️ This is an informational tool, not an official government source. Always verify with your local election authority.
+          ⚠️ This is an informational tool, not affiliated with the Election Commission of India. Always verify at{" "}
+          <a href="https://eci.gov.in" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">eci.gov.in</a>.
         </p>
       </div>
     </section>
