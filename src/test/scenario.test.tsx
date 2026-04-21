@@ -23,24 +23,21 @@ describe("ScenarioSimulator", () => {
     expect(screen.getByText(/check your state's deadline/i)).toBeInTheDocument();
   });
 
-  it("collapses scenario on second click", async () => {
+  it("switches between scenarios", async () => {
     const user = userEvent.setup();
     render(<ScenarioSimulator />);
 
-    const btn = screen.getByRole("button", { name: /scenario: i forgot to register/i });
-    await user.click(btn);
-    expect(screen.getByText("Action Steps")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /scenario: i forgot to register/i }));
+    expect(screen.getByText(/check your state's deadline/i)).toBeInTheDocument();
 
-    await user.click(btn);
-    expect(screen.queryByText("Action Steps")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /scenario: i moved to another state/i }));
+    expect(screen.getByText(/register in your new state/i)).toBeInTheDocument();
   });
 
-  it("scenario buttons are keyboard accessible", async () => {
-    const user = userEvent.setup();
+  it("all scenario buttons have aria-pressed attribute", () => {
     render(<ScenarioSimulator />);
-
-    await user.tab();
-    const focused = document.activeElement;
-    expect(focused?.getAttribute("role")).toBe("button");
+    const buttons = screen.getAllByRole("button");
+    const scenarioButtons = buttons.filter(b => b.getAttribute("aria-pressed") !== null);
+    expect(scenarioButtons.length).toBe(6);
   });
 });
