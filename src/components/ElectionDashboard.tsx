@@ -152,7 +152,7 @@ const ElectionDashboard = memo(function ElectionDashboard({ selectedState }: Ele
                     cy="50%"
                     outerRadius={100}
                     dataKey="value"
-                    label={({ name, value }: { name: string; value: number }) => `${name}: ${value}%`}
+                    label={({ name, value }: { name?: string; value?: number }) => `${name ?? ""}: ${value ?? 0}%`}
                     labelLine={false}
                   >
                     {voteShareData.map((_, idx) => (
