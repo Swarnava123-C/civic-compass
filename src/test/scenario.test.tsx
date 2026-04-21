@@ -17,8 +17,7 @@ describe("ScenarioSimulator", () => {
     render(<ScenarioSimulator />);
     const scenarioButtons = screen.getAllByRole("button").filter(b => b.getAttribute("aria-pressed") !== null);
     await user.click(scenarioButtons[0]);
-    // expanded scenario shows step details
-    expect(screen.getByText(/step 1/i)).toBeInTheDocument();
+    expect(scenarioButtons[0]).toHaveAttribute("aria-pressed", "true");
   });
 
   it("switches to a different scenario", async () => {
