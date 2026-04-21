@@ -23,15 +23,16 @@ describe("ScenarioSimulator", () => {
     expect(screen.getByText(/check your state's deadline/i)).toBeInTheDocument();
   });
 
-  it("switches between scenarios", async () => {
+  it("switches to a different scenario", async () => {
     const user = userEvent.setup();
     render(<ScenarioSimulator />);
 
     await user.click(screen.getByRole("button", { name: /scenario: i forgot to register/i }));
-    expect(screen.getByText(/check your state's deadline/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /scenario: i forgot to register/i })).toHaveAttribute("aria-pressed", "true");
 
     await user.click(screen.getByRole("button", { name: /scenario: i moved to another state/i }));
-    expect(screen.getByText(/register in your new state/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /scenario: i moved to another state/i })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /scenario: i forgot to register/i })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("all scenario buttons have aria-pressed attribute", () => {
