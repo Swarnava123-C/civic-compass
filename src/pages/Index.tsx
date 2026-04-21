@@ -166,7 +166,7 @@ const Index = () => {
         <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
-          <ChatBox profile={profile} />
+          <ChatBox profile={profile} selectedState={selectedState} />
         </Suspense>
         <div className="civic-section-divider" />
 

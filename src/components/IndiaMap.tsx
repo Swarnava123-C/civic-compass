@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, useMemo } from "react";
+import { memo, useCallback, useState, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { INDIA_STATES, NATIONAL_AVERAGE_TURNOUT, type IndiaStateElectionData } from "@/data/indiaElectionData";
 import type { StateInfo } from "@/types/civic";
@@ -8,7 +8,6 @@ interface IndiaMapProps {
   onSelectState: (state: StateInfo | null) => void;
 }
 
-// Simplified India map — state positions for interactive grid
 const STATE_POSITIONS: Record<string, { row: number; col: number }> = {
   JK: { row: 0, col: 2 }, LA: { row: 0, col: 3 },
   HP: { row: 1, col: 2 }, UK: { row: 1, col: 3 }, PB: { row: 1, col: 1 }, CH: { row: 1, col: 1 },
@@ -38,6 +37,7 @@ function getTurnoutLabel(turnout: number): string {
 
 const IndiaMap = memo(function IndiaMap({ selectedState, onSelectState }: IndiaMapProps) {
   const [hoveredState, setHoveredState] = useState<string | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const stateDataMap = useMemo(() => {
     const map = new Map<string, IndiaStateElectionData>();
@@ -58,20 +58,77 @@ const IndiaMap = memo(function IndiaMap({ selectedState, onSelectState }: IndiaM
 
   const hoveredData = hoveredState ? stateDataMap.get(hoveredState) : null;
 
-  // Build grid
   const maxRow = Math.max(...Object.values(STATE_POSITIONS).map(p => p.row));
   const maxCol = Math.max(...Object.values(STATE_POSITIONS).map(p => p.col));
 
-  const grid: (IndiaStateElectionData | null)[][] = Array.from({ length: maxRow + 1 }, () =>
-    Array.from({ length: maxCol + 1 }, () => null)
-  );
-
-  for (const [code, pos] of Object.entries(STATE_POSITIONS)) {
-    const data = stateDataMap.get(code);
-    if (data && pos.row <= maxRow && pos.col <= maxCol) {
-      grid[pos.row][pos.col] = data;
+  // Build flat list of states in grid order for keyboard nav
+  const flatStates = useMemo(() => {
+    const list: (IndiaStateElectionData | null)[] = [];
+    for (let r = 0; r <= maxRow; r++) {
+      for (let c = 0; c <= maxCol; c++) {
+        const entry = Object.entries(STATE_POSITIONS).find(([, pos]) => pos.row === r && pos.col === c);
+        if (entry) {
+          list.push(stateDataMap.get(entry[0]) ?? null);
+        } else {
+          list.push(null);
+        }
+      }
     }
-  }
+    return list;
+  }, [stateDataMap, maxRow, maxCol]);
+
+  const stateIndices = useMemo(() => {
+    const indices: number[] = [];
+    flatStates.forEach((s, i) => { if (s) indices.push(i); });
+    return indices;
+  }, [flatStates]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, currentIndex: number) => {
+    const cols = maxCol + 1;
+    let targetIndex = -1;
+
+    if (e.key === "ArrowRight") {
+      const pos = stateIndices.indexOf(currentIndex);
+      if (pos < stateIndices.length - 1) targetIndex = stateIndices[pos + 1];
+    } else if (e.key === "ArrowLeft") {
+      const pos = stateIndices.indexOf(currentIndex);
+      if (pos > 0) targetIndex = stateIndices[pos - 1];
+    } else if (e.key === "ArrowDown") {
+      const row = Math.floor(currentIndex / cols);
+      const col = currentIndex % cols;
+      for (let r = row + 1; r <= maxRow; r++) {
+        const idx = r * cols + col;
+        if (stateIndices.includes(idx)) { targetIndex = idx; break; }
+      }
+      // fallback: next state
+      if (targetIndex === -1) {
+        const pos = stateIndices.indexOf(currentIndex);
+        if (pos < stateIndices.length - 1) targetIndex = stateIndices[pos + 1];
+      }
+    } else if (e.key === "ArrowUp") {
+      const row = Math.floor(currentIndex / cols);
+      const col = currentIndex % cols;
+      for (let r = row - 1; r >= 0; r--) {
+        const idx = r * cols + col;
+        if (stateIndices.includes(idx)) { targetIndex = idx; break; }
+      }
+      if (targetIndex === -1) {
+        const pos = stateIndices.indexOf(currentIndex);
+        if (pos > 0) targetIndex = stateIndices[pos - 1];
+      }
+    } else {
+      return;
+    }
+
+    e.preventDefault();
+    if (targetIndex >= 0 && gridRef.current) {
+      const buttons = gridRef.current.querySelectorAll<HTMLButtonElement>('[role="gridcell"] button');
+      const statePos = stateIndices.indexOf(targetIndex);
+      if (statePos >= 0 && buttons[statePos]) {
+        buttons[statePos].focus();
+      }
+    }
+  }, [stateIndices, maxRow, maxCol]);
 
   return (
     <section className="py-16 px-4" aria-labelledby="map-heading">
@@ -80,11 +137,11 @@ const IndiaMap = memo(function IndiaMap({ selectedState, onSelectState }: IndiaM
           India Electoral Map
         </h2>
         <p className="text-muted-foreground text-center mb-4 font-sans max-w-lg mx-auto">
-          Click any state or UT to view detailed election data. Color intensity indicates voter turnout.
+          Navigate with arrow keys or click any state to view election data. Color shows voter turnout.
         </p>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-4 mb-8 flex-wrap">
+        <div className="flex items-center justify-center gap-4 mb-8 flex-wrap" aria-label="Turnout legend">
           <span className="text-xs text-muted-foreground font-sans">Turnout:</span>
           {[
             { label: "< 60%", cls: "bg-[hsl(217,50%,70%)]" },
@@ -93,7 +150,7 @@ const IndiaMap = memo(function IndiaMap({ selectedState, onSelectState }: IndiaM
             { label: "80%+", cls: "bg-[hsl(217,72%,30%)]" },
           ].map((l) => (
             <div key={l.label} className="flex items-center gap-1.5">
-              <div className={`w-4 h-4 rounded ${l.cls}`} />
+              <div className={`w-4 h-4 rounded ${l.cls}`} aria-hidden="true" />
               <span className="text-xs text-muted-foreground font-sans">{l.label}</span>
             </div>
           ))}
@@ -102,45 +159,53 @@ const IndiaMap = memo(function IndiaMap({ selectedState, onSelectState }: IndiaM
           </span>
         </div>
 
-        {/* Tile Grid Map */}
-        <div className="relative">
-          {/* Tooltip */}
-          {hoveredData && (
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full z-20 civic-card p-3 shadow-lg min-w-[200px]" role="tooltip">
-              <p className="text-sm font-semibold text-foreground font-sans">{hoveredData.name}</p>
-              <p className="text-xs text-muted-foreground font-sans">Turnout: {hoveredData.voterTurnout}% ({getTurnoutLabel(hoveredData.voterTurnout)})</p>
-              <p className="text-xs text-muted-foreground font-sans">Constituencies: {hoveredData.totalConstituencies}</p>
-              <p className="text-xs text-muted-foreground font-sans">Last Election: {hoveredData.lastElectionYear}</p>
-            </div>
-          )}
+        {/* Tooltip */}
+        {hoveredData && (
+          <div className="text-center mb-2" role="status" aria-live="polite">
+            <span className="text-sm font-semibold text-foreground font-sans">{hoveredData.name}</span>
+            <span className="text-xs text-muted-foreground font-sans ml-2">
+              Turnout: {hoveredData.voterTurnout}% ({getTurnoutLabel(hoveredData.voterTurnout)}) · {hoveredData.totalConstituencies} constituencies · Last: {hoveredData.lastElectionYear}
+            </span>
+          </div>
+        )}
 
-          <div className="grid gap-1.5 mx-auto" style={{ gridTemplateColumns: `repeat(${maxCol + 1}, minmax(0, 1fr))`, maxWidth: "600px" }}>
-            {grid.flat().map((state, i) => {
-              if (!state) return <div key={`empty-${i}`} className="aspect-square" />;
-              const isSelected = selectedState?.code === state.code;
-              return (
+        {/* Tile Grid Map */}
+        <div
+          ref={gridRef}
+          role="grid"
+          aria-label="India electoral map grid"
+          className="grid gap-1.5 mx-auto"
+          style={{ gridTemplateColumns: `repeat(${maxCol + 1}, minmax(0, 1fr))`, maxWidth: "600px" }}
+        >
+          {flatStates.map((state, i) => {
+            if (!state) return <div key={`empty-${i}`} role="gridcell" className="aspect-square" />;
+            const isSelected = selectedState?.code === state.code;
+            return (
+              <div key={state.code} role="gridcell">
                 <motion.button
-                  key={state.code}
                   onClick={() => handleClick(state.code)}
                   onMouseEnter={() => setHoveredState(state.code)}
                   onMouseLeave={() => setHoveredState(null)}
-                  className={`aspect-square rounded-lg ${getTurnoutColor(state.voterTurnout)} text-white text-[10px] font-bold font-sans flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring ${
+                  onFocus={() => setHoveredState(state.code)}
+                  onBlur={() => setHoveredState(null)}
+                  onKeyDown={(e) => handleKeyDown(e, i)}
+                  tabIndex={i === stateIndices[0] ? 0 : -1}
+                  className={`w-full aspect-square rounded-lg ${getTurnoutColor(state.voterTurnout)} text-white text-[10px] font-bold font-sans flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
                     isSelected ? "ring-2 ring-accent scale-110 shadow-lg z-10" : "hover:scale-105 hover:shadow-md"
                   }`}
-                  whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.95 }}
-                  aria-label={`${state.name} — ${state.voterTurnout}% turnout`}
+                  aria-label={`${state.name} — ${state.voterTurnout}% turnout, ${state.totalConstituencies} constituencies`}
                   aria-pressed={isSelected}
                 >
                   {state.code}
                 </motion.button>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-6 font-sans">
-          Simplified tile grid representation. Data based on most recent elections.
+          Simplified tile grid. Use arrow keys to navigate. Data based on most recent elections.
         </p>
       </div>
     </section>
