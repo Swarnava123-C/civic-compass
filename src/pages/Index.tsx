@@ -17,6 +17,9 @@ const FAQSection = lazy(() => import("@/components/FAQSection"));
 const ChatBox = lazy(() => import("@/components/ChatBox"));
 const CivicQuiz = lazy(() => import("@/components/CivicQuiz"));
 const StateInfoPanel = lazy(() => import("@/components/StateInfoPanel"));
+const MockElection = lazy(() => import("@/components/MockElection"));
+const HistoricalComparison = lazy(() => import("@/components/HistoricalComparison"));
+const LearningPath = lazy(() => import("@/components/LearningPath"));
 
 function LoadingSkeleton() {
   return (
@@ -98,7 +101,7 @@ const Index = () => {
 
         <div className="civic-section-divider" />
 
-        {/* Dashboard — always visible */}
+        {/* Dashboard */}
         <Suspense fallback={<LoadingSkeleton />}>
           <ElectionDashboard selectedState={selectedState} />
         </Suspense>
@@ -116,11 +119,23 @@ const Index = () => {
           </Suspense>
         )}
 
+        {/* Historical Comparison */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <HistoricalComparison selectedState={selectedState} />
+        </Suspense>
+        <div className="civic-section-divider" />
+
         <ElectionOverview />
         <div className="civic-section-divider" />
 
         <Suspense fallback={<LoadingSkeleton />}>
           <Timeline />
+        </Suspense>
+        <div className="civic-section-divider" />
+
+        {/* Mock Election Simulator */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <MockElection />
         </Suspense>
         <div className="civic-section-divider" />
 
@@ -136,6 +151,12 @@ const Index = () => {
 
         <Suspense fallback={<LoadingSkeleton />}>
           <GovernmentStructure />
+        </Suspense>
+        <div className="civic-section-divider" />
+
+        {/* Learning Path */}
+        <Suspense fallback={<LoadingSkeleton />}>
+          <LearningPath />
         </Suspense>
         <div className="civic-section-divider" />
 
