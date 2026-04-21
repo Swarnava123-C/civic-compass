@@ -1,20 +1,15 @@
 import { memo, useMemo } from "react";
-import type { StateInfo } from "@/types/civic";
+import type { StateInfo, StateDetail } from "@/types/civic";
 import { STATE_DETAILS } from "@/data/stateDetails";
-import { cachedGet } from "@/utils/cache";
 
 interface StateInfoPanelProps {
   selectedState: StateInfo | null;
 }
 
 const StateInfoPanel = memo(function StateInfoPanel({ selectedState }: StateInfoPanelProps) {
-  const details = useMemo(() => {
+  const details: StateDetail | null = useMemo(() => {
     if (!selectedState) return null;
-    return cachedGet(
-      `state-detail-${selectedState.code}`,
-      () => STATE_DETAILS[selectedState.code] ?? null,
-      300_000 // 5 min cache
-    );
+    return STATE_DETAILS[selectedState.code] ?? null;
   }, [selectedState]);
 
   if (!selectedState || !details) return null;
