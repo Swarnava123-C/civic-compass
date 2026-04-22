@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect } from "react";
+import { memo, useCallback, useEffect, useRef as useReactRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Volume2, VolumeX, Languages, Minus, Plus } from "lucide-react";
 import { useSpeechRecognition } from "./useSpeechRecognition";
@@ -11,9 +11,10 @@ import type { StateInfo } from "@/types/civic";
 interface VoiceControlsProps {
   selectedState: StateInfo | null;
   onTranscript?: (text: string) => void;
+  speakRef?: React.MutableRefObject<((text: string) => void) | null>;
 }
 
-const VoiceControls = memo(function VoiceControls({ selectedState, onTranscript }: VoiceControlsProps) {
+const VoiceControls = memo(function VoiceControls({ selectedState, onTranscript, speakRef }: VoiceControlsProps) {
   const { langCode, language, setLanguage, allLanguages } = useLanguage();
   const stateLanguages = selectedState ? getLanguagesForState(selectedState.code) : allLanguages;
 
@@ -26,6 +27,16 @@ const VoiceControls = memo(function VoiceControls({ selectedState, onTranscript 
       onTranscript(transcript);
     }
   }, [isListening, transcript, onTranscript]);
+
+  // Expose speak function to parent
+  useEffect(() => {
+    if (speakRef) {
+      speakRef.current = speak;
+    }
+    return () => {
+      if (speakRef) speakRef.current = null;
+    };
+  }, [speakRef, speak]);
 
   const handleMicToggle = useCallback(() => {
     if (isListening) stopListening();
