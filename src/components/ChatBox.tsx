@@ -100,6 +100,21 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
     setInput(text);
   }, []);
 
+  // Auto-speak new assistant messages
+  useEffect(() => {
+    if (messages.length > prevMsgCountRef.current) {
+      const last = messages[messages.length - 1];
+      if (last?.role === "assistant" && speakRef.current) {
+        // Extract plain text: use structured summary or strip markdown
+        const textToSpeak = last.structured?.summary || last.content.replace(/[#*_`\[\]()>~|]/g, "");
+        if (textToSpeak.trim()) {
+          speakRef.current(textToSpeak);
+        }
+      }
+    }
+    prevMsgCountRef.current = messages.length;
+  }, [messages]);
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
