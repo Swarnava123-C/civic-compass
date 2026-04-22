@@ -1,6 +1,10 @@
+/**
+ * Input sanitization utilities.
+ */
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
+  if (isNaN(date.getTime())) return "Invalid date";
+  return date.toLocaleDateString("en-IN", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -8,5 +12,8 @@ export function formatDate(dateStr: string): string {
 }
 
 export function sanitizeInput(input: string): string {
-  return input.trim().slice(0, 500);
+  return input
+    .trim()
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "") // strip control chars
+    .slice(0, 500);
 }
