@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
 import HeroSection from "@/components/HeroSection";
 import ElectionOverview from "@/components/ElectionOverview";
 import StickyNav from "@/components/StickyNav";
@@ -38,6 +39,13 @@ const DEFAULT_PROFILE: UserProfile = {
   age: null,
   needsRegistrationHelp: false,
   needsIdHelp: false,
+};
+
+const sectionFade = {
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.1 as const },
+  transition: { duration: 0.5 },
 };
 
 const Index = () => {
@@ -80,7 +88,7 @@ const Index = () => {
         <StickyNav />
 
         {/* Profile + Controls bar */}
-        <div className="py-4 px-4">
+        <div className="py-6 px-4">
           <div className="container max-w-5xl mx-auto space-y-3">
             <UserProfilePanel
               profile={profile}
@@ -102,15 +110,19 @@ const Index = () => {
         <div className="civic-section-divider" />
 
         {/* Dashboard */}
-        <Suspense fallback={<LoadingSkeleton />}>
-          <ElectionDashboard selectedState={selectedState} />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <ElectionDashboard selectedState={selectedState} />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
         {/* India Map */}
-        <Suspense fallback={<LoadingSkeleton />}>
-          <IndiaMap selectedState={selectedState} onSelectState={handleMapSelect} />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <IndiaMap selectedState={selectedState} onSelectState={handleMapSelect} />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
         {selectedState && (
@@ -120,59 +132,81 @@ const Index = () => {
         )}
 
         {/* Historical Comparison */}
-        <Suspense fallback={<LoadingSkeleton />}>
-          <HistoricalComparison selectedState={selectedState} />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <HistoricalComparison selectedState={selectedState} />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
-        <ElectionOverview />
+        <motion.div {...sectionFade}>
+          <ElectionOverview />
+        </motion.div>
         <div className="civic-section-divider" />
 
-        <Suspense fallback={<LoadingSkeleton />}>
-          <Timeline />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <Timeline />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
         {/* Mock Election Simulator */}
-        <Suspense fallback={<LoadingSkeleton />}>
-          <MockElection />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <MockElection />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
-        <Suspense fallback={<LoadingSkeleton />}>
-          <VotingGuide />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <VotingGuide />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
-        <Suspense fallback={<LoadingSkeleton />}>
-          <ScenarioSimulator onScenarioView={handleScenarioView} />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <ScenarioSimulator onScenarioView={handleScenarioView} />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
-        <Suspense fallback={<LoadingSkeleton />}>
-          <GovernmentStructure />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <GovernmentStructure />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
         {/* Learning Path */}
-        <Suspense fallback={<LoadingSkeleton />}>
-          <LearningPath />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <LearningPath />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
-        <Suspense fallback={<LoadingSkeleton />}>
-          <FAQSection />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <FAQSection />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
-        <Suspense fallback={<LoadingSkeleton />}>
-          <ChatBox profile={profile} selectedState={selectedState} />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <ChatBox profile={profile} selectedState={selectedState} />
+          </Suspense>
+        </motion.div>
         <div className="civic-section-divider" />
 
-        <Suspense fallback={<LoadingSkeleton />}>
-          <CivicQuiz onComplete={handleQuizComplete} />
-        </Suspense>
+        <motion.div {...sectionFade}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <CivicQuiz onComplete={handleQuizComplete} />
+          </Suspense>
+        </motion.div>
 
         {/* Footer */}
         <footer className="py-10 px-4 border-t bg-card" role="contentinfo">
