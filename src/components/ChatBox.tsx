@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, memo, useMemo, lazy, Suspense, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Loader2, Sparkles, MessageSquare, Eye, Volume2 } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquare, Eye } from "lucide-react";
 import { sanitizeInput } from "@/utils/date";
 import { logger } from "@/utils/logger";
 import { trackApiLatency } from "@/utils/performance";
@@ -11,7 +11,9 @@ import ConfidenceBreakdownCard from "@/components/ConfidenceBreakdownCard";
 import ParseErrorCard from "@/components/ParseErrorCard";
 import AITransparencyPanel from "@/components/AITransparencyPanel";
 import CitationsPanel from "@/components/CitationsPanel";
+import { getVoiceMode } from "@/voice/voiceModeStore";
 import type { ChatMessage, DetailLevel, StructuredAIResponse, UserProfile, ConfidenceBreakdown, StateInfo } from "@/types/civic";
+import type { VoiceCommand } from "@/voice/voiceCommands";
 import { FAQ_ITEMS } from "@/data/civicContent";
 
 const VoiceControls = lazy(() => import("@/voice/VoiceControls"));
@@ -97,16 +99,39 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
   const effectiveDetailLevel = simpleMode ? "beginner" as DetailLevel : detailLevel;
 
   const handleVoiceTranscript = useCallback((text: string) => {
-    setInput(text);
+    const mode = getVoiceMode();
+    if (mode === "speak-only") {
+      // In speak-only mode, auto-submit instead of filling input
+      setInput(text);
+      // Auto submit after brief delay
+      setTimeout(() => {
+        const form = document.getElementById("chat-form") as HTMLFormElement;
+        form?.requestSubmit();
+      }, 100);
+    } else {
+      setInput(text);
+    }
   }, []);
+
+  const handleVoiceCommand = useCallback((cmd: VoiceCommand) => {
+    if (cmd.type === "summarize") {
+      const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+      if (lastAssistant && speakRef.current) {
+        const summary = lastAssistant.structured?.summary || lastAssistant.content.slice(0, 300);
+        speakRef.current(summary);
+      }
+    } else if (cmd.type === "next") {
+      // Focus input for next question
+      inputRef.current?.focus();
+    }
+  }, [messages]);
 
   // Auto-speak new assistant messages
   useEffect(() => {
     if (messages.length > prevMsgCountRef.current) {
       const last = messages[messages.length - 1];
       if (last?.role === "assistant" && speakRef.current) {
-        // Extract plain text: use structured summary or strip markdown
-        const textToSpeak = last.structured?.summary || last.content.replace(/[#*_`\[\]()>~|]/g, "");
+        const textToSpeak = last.structured?.summary || last.content;
         if (textToSpeak.trim()) {
           speakRef.current(textToSpeak);
         }
@@ -121,8 +146,12 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
       const sanitized = sanitizeInput(input);
       if (!sanitized) return;
 
+      const mode = getVoiceMode();
+
       setInput("");
       setLastQuery(sanitized);
+
+      // In speak-only mode, still add to chat but user won't see it prominently
       addMessage("user", sanitized);
 
       const breakdown = computeConfidenceBreakdown(sanitized, profile);
@@ -288,19 +317,27 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
   }, []);
 
   return (
-    <section className="py-20 px-4 civic-gradient-subtle" aria-labelledby="chat-heading">
+    <section className="py-16 px-4" aria-labelledby="chat-heading">
       <div className="container max-w-3xl mx-auto">
-        <h2 id="chat-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-center">
-          Guided Civic Assistant
-        </h2>
-        <p className="text-muted-foreground text-center mb-4 font-sans">
-          AI-powered Q&A — factual, non-partisan, with structured intelligence
-        </p>
+        <div className="text-center mb-8">
+          <span className="civic-badge-info mb-3 inline-block">🤖 AI-Powered</span>
+          <h2 id="chat-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+            Guided Civic Assistant
+          </h2>
+          <p className="text-muted-foreground font-sans max-w-lg mx-auto">
+            Ask questions about Indian elections, government, and civic participation — factual, non-partisan, with structured intelligence
+          </p>
+        </div>
 
         {/* Voice Controls */}
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-6">
           <Suspense fallback={null}>
-            <VoiceControls selectedState={selectedState ?? null} onTranscript={handleVoiceTranscript} speakRef={speakRef} />
+            <VoiceControls
+              selectedState={selectedState ?? null}
+              onTranscript={handleVoiceTranscript}
+              speakRef={speakRef}
+              onVoiceCommand={handleVoiceCommand}
+            />
           </Suspense>
         </div>
 
@@ -355,15 +392,31 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
 
         {/* Chat area */}
         <div
-          className="civic-card p-4 h-96 overflow-y-auto mb-4 space-y-3"
+          className="civic-card p-5 h-[28rem] overflow-y-auto mb-4 space-y-3 scroll-smooth"
           role="log"
           aria-label="Chat messages"
           aria-live="polite"
         >
           {messages.length === 0 && (
-            <p className="text-center text-muted-foreground text-sm font-sans py-8">
-              Ask a question about elections, voting, or civic processes…
-            </p>
+            <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-8">
+              <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center">
+                <MessageSquare className="w-7 h-7 text-accent" />
+              </div>
+              <p className="text-muted-foreground text-sm font-sans">
+                Ask about elections, voting, registration…
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center max-w-md">
+                {["How do I register to vote?", "Explain EVM voting", "What is NOTA?"].map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => setInput(q)}
+                    className="px-3 py-1.5 rounded-full text-xs font-sans bg-muted hover:bg-muted/80 text-muted-foreground transition"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
           {messages.map((msg) => (
             <div
@@ -373,8 +426,8 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm font-sans ${
                   msg.role === "user"
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-secondary text-secondary-foreground"
+                    ? "bg-accent text-accent-foreground rounded-br-md"
+                    : "bg-secondary text-secondary-foreground rounded-bl-md"
                 }`}
               >
                 {msg.role === "assistant" && msg.parseError ? (
@@ -417,7 +470,7 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
         )}
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form id="chat-form" onSubmit={handleSubmit} className="flex gap-2">
           <input
             ref={inputRef}
             type="text"
@@ -425,7 +478,7 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about elections, voting, registration…"
             maxLength={500}
-            className="flex-1 px-4 py-3 rounded-xl border bg-card text-foreground text-sm font-sans placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 px-4 py-3 rounded-xl border bg-card text-foreground text-sm font-sans placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
             aria-label="Type your question about elections"
             disabled={isLoading}
           />
