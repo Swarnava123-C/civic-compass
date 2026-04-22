@@ -29,50 +29,60 @@ const CARDS = [
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.1, duration: 0.4 },
-  }),
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
 const ElectionOverview = memo(function ElectionOverview() {
   return (
-    <section className="py-20 px-4 civic-bg-grid" aria-labelledby="overview-heading">
-      <div className="container max-w-4xl mx-auto">
-        <h2 id="overview-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-center">
-          Indian Elections Overview
-        </h2>
-        <p className="text-muted-foreground text-center mb-12 font-sans max-w-lg mx-auto">
-          Understanding the foundations of India's democratic electoral system
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-5">
-          {CARDS.map((card, i) => {
+    <section className="py-16 px-4" aria-labelledby="overview-heading" id="overview-heading">
+      <div className="container max-w-5xl mx-auto">
+        <div className="text-center mb-10">
+          <span className="civic-badge-info mb-3 inline-block">📚 Foundation</span>
+          <h2 id="overview-heading" className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+            Understanding Indian Democracy
+          </h2>
+          <p className="text-muted-foreground font-sans max-w-2xl mx-auto">
+            Essential knowledge about how elections work in the world's largest democracy
+          </p>
+        </div>
+        <motion.div
+          className="grid md:grid-cols-2 gap-5"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          {CARDS.map((card) => {
             const Icon = card.icon;
             return (
               <motion.article
                 key={card.title}
-                custom={i}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-50px" }}
                 variants={cardVariants}
                 className="civic-card-hover p-6"
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-accent" />
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-5 h-5 text-accent" aria-hidden="true" />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground font-sans">{card.title}</h3>
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground font-sans mb-2">{card.title}</h3>
+                    <p className="text-sm text-muted-foreground font-sans leading-relaxed">{card.content}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed font-sans">{card.content}</p>
               </motion.article>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

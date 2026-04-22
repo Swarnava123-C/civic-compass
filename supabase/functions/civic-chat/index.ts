@@ -6,6 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_MESSAGES = 20;
+
 const SYSTEM_PROMPT = `You are CivicFlow India, a neutral, factual civic education assistant focused EXCLUSIVELY on Indian elections and governance.
 
 SCOPE: Republic of India ONLY. Do NOT answer questions about elections in any other country.
@@ -34,42 +37,78 @@ const STRUCTURED_TOOL = {
       type: "object",
       properties: {
         summary: { type: "string", description: "A brief 1-2 sentence summary of the answer about Indian elections/governance." },
-        timeline_stage: { type: "string", description: "Which Indian election timeline stage this relates to (e.g., Voter Registration, Nomination, Campaign, Polling Day, Counting, Results), or empty if not applicable." },
+        timeline_stage: { type: "string", description: "Which Indian election timeline stage this relates to, or empty if not applicable." },
         steps: { type: "array", items: { type: "string" }, description: "Ordered action steps the Indian citizen should take, if applicable." },
-        documents_required: { type: "array", items: { type: "string" }, description: "Documents or forms needed (e.g., Form 6, Aadhaar, EPIC), if applicable." },
+        documents_required: { type: "array", items: { type: "string" }, description: "Documents or forms needed, if applicable." },
         eligibility_rules: { type: "array", items: { type: "string" }, description: "Eligibility requirements under Indian law, if applicable." },
         deadlines: { type: "string", description: "Relevant deadlines, if applicable." },
-        official_links: { type: "array", items: { type: "string" }, description: "Official Indian government resource URLs (eci.gov.in, nvsp.in, etc.), if applicable." },
+        official_links: { type: "array", items: { type: "string" }, description: "Official Indian government resource URLs, if applicable." },
         warnings: { type: "array", items: { type: "string" }, description: "Important warnings or caveats." },
-        confidence_score: { type: "string", enum: ["high", "medium", "low"], description: "How confident you are. High = specific process + specific state/UT. Medium = specific topic but general. Low = vague or ambiguous." },
+        confidence_score: { type: "string", enum: ["high", "medium", "low"], description: "How confident you are." },
       },
       required: ["summary", "confidence_score"],
     },
   },
 };
 
+function validateMessages(messages: unknown): { valid: boolean; error?: string } {
+  if (!messages || !Array.isArray(messages)) {
+    return { valid: false, error: "Messages array is required" };
+  }
+  if (messages.length === 0) {
+    return { valid: false, error: "At least one message is required" };
+  }
+  if (messages.length > MAX_MESSAGES) {
+    return { valid: false, error: `Maximum ${MAX_MESSAGES} messages allowed` };
+  }
+  for (const msg of messages) {
+    if (!msg || typeof msg !== "object") {
+      return { valid: false, error: "Each message must be an object" };
+    }
+    if (typeof msg.content !== "string") {
+      return { valid: false, error: "Each message must have a string content" };
+    }
+    if (msg.content.length > MAX_MESSAGE_LENGTH) {
+      return { valid: false, error: `Each message must be under ${MAX_MESSAGE_LENGTH} characters` };
+    }
+    if (msg.role !== "user" && msg.role !== "assistant") {
+      return { valid: false, error: "Each message must have role 'user' or 'assistant'" };
+    }
+  }
+  return { valid: true };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const { messages, detailLevel, structured } = await req.json();
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ error: "Messages array is required" }), {
+  try {
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    for (const msg of messages) {
-      if (typeof msg.content !== "string" || msg.content.length > 500) {
-        return new Response(JSON.stringify({ error: "Each message must be a string under 500 characters" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    const { messages, detailLevel, structured } = body;
+
+    const validation = validateMessages(messages);
+    if (!validation.valid) {
+      return new Response(JSON.stringify({ error: validation.error }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -82,6 +121,14 @@ serve(async (req) => {
         ? "Provide detailed, comprehensive explanations suitable for someone with civic knowledge of India."
         : "Provide simple, beginner-friendly explanations about Indian elections. Use short sentences and avoid legal jargon.";
 
+    const apiMessages = [
+      { role: "system", content: `${SYSTEM_PROMPT}\n\n${levelInstruction}` },
+      ...(messages as Array<{ role: string; content: string }>).map((m) => ({
+        role: m.role,
+        content: m.content.slice(0, MAX_MESSAGE_LENGTH),
+      })),
+    ];
+
     if (structured) {
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -91,10 +138,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: `${SYSTEM_PROMPT}\n\n${levelInstruction}` },
-            ...messages,
-          ],
+          messages: apiMessages,
           tools: [STRUCTURED_TOOL],
           tool_choice: { type: "function", function: { name: "civic_response" } },
         }),
@@ -107,9 +151,7 @@ serve(async (req) => {
         if (response.status === 402) {
           return new Response(JSON.stringify({ error: "Service temporarily unavailable." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
-        const t = await response.text();
-        console.error("AI gateway error:", response.status, t);
-        return new Response(JSON.stringify({ error: "AI gateway error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "AI service error" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       const data = await response.json();
@@ -137,10 +179,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: `${SYSTEM_PROMPT}\n\n${levelInstruction}` },
-          ...messages,
-        ],
+        messages: apiMessages,
         stream: true,
       }),
     });
@@ -152,16 +191,14 @@ serve(async (req) => {
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "Service temporarily unavailable." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "AI service error" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(response.body, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
   } catch (e) {
-    console.error("civic-chat error:", e);
+    const errorMessage = e instanceof Error ? e.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
