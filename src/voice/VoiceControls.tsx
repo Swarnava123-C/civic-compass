@@ -14,7 +14,7 @@ interface VoiceControlsProps {
   speakRef?: React.MutableRefObject<((text: string) => void) | null>;
 }
 
-const VoiceControls = memo(function VoiceControls({ selectedState, onTranscript }: VoiceControlsProps) {
+const VoiceControls = memo(function VoiceControls({ selectedState, onTranscript, speakRef }: VoiceControlsProps) {
   const { langCode, language, setLanguage, allLanguages } = useLanguage();
   const stateLanguages = selectedState ? getLanguagesForState(selectedState.code) : allLanguages;
 
