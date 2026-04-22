@@ -11,6 +11,7 @@ import type { StateInfo } from "@/types/civic";
 interface VoiceControlsProps {
   selectedState: StateInfo | null;
   onTranscript?: (text: string) => void;
+  speakRef?: React.MutableRefObject<((text: string) => void) | null>;
 }
 
 const VoiceControls = memo(function VoiceControls({ selectedState, onTranscript }: VoiceControlsProps) {
