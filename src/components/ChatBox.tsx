@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, memo, useMemo, lazy, Suspense } from "react";
+import { useState, useCallback, useRef, memo, useMemo, lazy, Suspense, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Loader2, Sparkles, MessageSquare, Eye, Volume2 } from "lucide-react";
 import { sanitizeInput } from "@/utils/date";
@@ -58,6 +58,8 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
   const [lastStructured, setLastStructured] = useState<StructuredAIResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const speakRef = useRef<((text: string) => void) | null>(null);
+  const prevMsgCountRef = useRef(0);
 
   const supabaseUrl = useMemo(() => import.meta.env.VITE_SUPABASE_URL as string | undefined, []);
 
@@ -283,7 +285,7 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
         {/* Voice Controls */}
         <div className="flex justify-center mb-4">
           <Suspense fallback={null}>
-            <VoiceControls selectedState={selectedState ?? null} onTranscript={handleVoiceTranscript} />
+            <VoiceControls selectedState={selectedState ?? null} onTranscript={handleVoiceTranscript} speakRef={speakRef} />
           </Suspense>
         </div>
 
