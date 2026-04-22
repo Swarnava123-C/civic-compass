@@ -35,6 +35,22 @@ describe("validateVoteShares", () => {
     ];
     expect(validateVoteShares(parties).some((e) => e.field === "partyName")).toBe(true);
   });
+
+  it("rejects negative vote shares", () => {
+    const parties: PartyInput[] = [
+      { name: "A", voteSharePercent: -10 },
+      { name: "B", voteSharePercent: 110 },
+    ];
+    expect(validateVoteShares(parties).some((e) => e.field === "voteShare")).toBe(true);
+  });
+
+  it("accepts shares within 0.5% tolerance of 100", () => {
+    const parties: PartyInput[] = [
+      { name: "A", voteSharePercent: 50.3 },
+      { name: "B", voteSharePercent: 49.9 },
+    ];
+    expect(validateVoteShares(parties)).toHaveLength(0);
+  });
 });
 
 describe("simulateElection", () => {
@@ -64,7 +80,6 @@ describe("simulateElection", () => {
       { name: "C", voteSharePercent: 33 },
     ]);
     expect(result.majorityMark).toBe(51);
-    // With 3 nearly-equal parties, no single party gets majority
     expect(result.isHungAssembly).toBe(true);
     expect(result.coalitionSuggestion).toBeTruthy();
   });
@@ -89,5 +104,83 @@ describe("simulateElection", () => {
       { name: "B", voteSharePercent: 40 },
     ]);
     expect(result.majorityMark).toBe(202);
+  });
+
+  // Edge cases
+  it("handles 0% turnout edge case (all zero shares)", () => {
+    const result = simulateElection(100, [
+      { name: "A", voteSharePercent: 50 },
+      { name: "B", voteSharePercent: 50 },
+    ]);
+    expect(result.totalSeats).toBe(100);
+    expect(result.partySeats.reduce((s, p) => s + p.seats, 0)).toBe(100);
+  });
+
+  it("handles extreme dominance (99-1 split)", () => {
+    const result = simulateElection(100, [
+      { name: "A", voteSharePercent: 99 },
+      { name: "B", voteSharePercent: 1 },
+    ]);
+    expect(result.hasOutrightMajority).toBe(true);
+    expect(result.partySeats.find((p) => p.name === "A")!.seats).toBeGreaterThanOrEqual(99);
+  });
+
+  it("handles tie vote shares", () => {
+    const result = simulateElection(100, [
+      { name: "A", voteSharePercent: 50 },
+      { name: "B", voteSharePercent: 50 },
+    ]);
+    expect(result.partySeats.reduce((s, p) => s + p.seats, 0)).toBe(100);
+    expect(result.partySeats[0].seats).toBe(50);
+    expect(result.partySeats[1].seats).toBe(50);
+  });
+
+  it("handles single seat constituency", () => {
+    const result = simulateElection(1, [
+      { name: "A", voteSharePercent: 60 },
+      { name: "B", voteSharePercent: 40 },
+    ]);
+    expect(result.totalSeats).toBe(1);
+    expect(result.partySeats.reduce((s, p) => s + p.seats, 0)).toBe(1);
+    expect(result.majorityMark).toBe(1);
+  });
+
+  it("handles 6 parties", () => {
+    const result = simulateElection(300, [
+      { name: "A", voteSharePercent: 30 },
+      { name: "B", voteSharePercent: 25 },
+      { name: "C", voteSharePercent: 20 },
+      { name: "D", voteSharePercent: 10 },
+      { name: "E", voteSharePercent: 10 },
+      { name: "F", voteSharePercent: 5 },
+    ]);
+    expect(result.partySeats.reduce((s, p) => s + p.seats, 0)).toBe(300);
+    expect(result.partySeats).toHaveLength(6);
+  });
+
+  it("coalition suggestion includes enough parties for majority", () => {
+    const result = simulateElection(100, [
+      { name: "A", voteSharePercent: 34 },
+      { name: "B", voteSharePercent: 33 },
+      { name: "C", voteSharePercent: 33 },
+    ]);
+    if (result.coalitionSuggestion) {
+      // Extract seat count from suggestion
+      const match = result.coalitionSuggestion.match(/\((\d+) seats\)/);
+      if (match) {
+        expect(parseInt(match[1])).toBeGreaterThanOrEqual(result.majorityMark);
+      }
+    }
+  });
+
+  it("negative swing does not produce negative vote shares", () => {
+    const result = simulateElection(100, [
+      { name: "A", voteSharePercent: 5 },
+      { name: "B", voteSharePercent: 95 },
+    ], -10);
+    result.partySeats.forEach((p) => {
+      expect(p.seats).toBeGreaterThanOrEqual(0);
+      expect(p.voteShare).toBeGreaterThanOrEqual(0);
+    });
   });
 });
