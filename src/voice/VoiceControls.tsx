@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect } from "react";
+import { memo, useCallback, useEffect, useRef as useReactRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Volume2, VolumeX, Languages, Minus, Plus } from "lucide-react";
 import { useSpeechRecognition } from "./useSpeechRecognition";
@@ -27,6 +27,16 @@ const VoiceControls = memo(function VoiceControls({ selectedState, onTranscript,
       onTranscript(transcript);
     }
   }, [isListening, transcript, onTranscript]);
+
+  // Expose speak function to parent
+  useEffect(() => {
+    if (speakRef) {
+      speakRef.current = speak;
+    }
+    return () => {
+      if (speakRef) speakRef.current = null;
+    };
+  }, [speakRef, speak]);
 
   const handleMicToggle = useCallback(() => {
     if (isListening) stopListening();
