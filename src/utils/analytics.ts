@@ -33,7 +33,9 @@ declare global {
 /* ------------------------------------------------------------------ */
 
 const CONSENT_KEY = "civicflow_analytics_consent";
-const GA_ID = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+function getGaId(): string | undefined {
+  return import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Consent helpers                                                    */
