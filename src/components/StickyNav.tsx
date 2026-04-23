@@ -1,6 +1,6 @@
-import { memo, useState, useEffect, useCallback } from "react";
+import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, BarChart3, Users, MessageSquare, Trophy, Menu, X, Map, Clock, Zap } from "lucide-react";
+import { BarChart3, Users, MessageSquare, Trophy, Menu, X, Map, Clock, Zap } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const NAV_ITEMS = [

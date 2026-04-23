@@ -237,7 +237,7 @@ const MockElection = memo(function MockElection() {
                         <XAxis type="number" domain={[0, totalSeats]} tick={{ fontSize: 10 }} />
                         <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={60} />
                         <Tooltip
-                          formatter={(value: number) => [`${value} seats`, "Result"]}
+                          formatter={(value) => [`${String(value)} seats`, "Result"]}
                           contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", fontSize: "12px" }}
                         />
                         <ReferenceLine x={result.majorityMark} stroke="hsl(var(--destructive))" strokeDasharray="4 4" label={{ value: "Majority", fill: "hsl(var(--destructive))", fontSize: 10 }} />

@@ -1,7 +1,7 @@
-import { lazy, Suspense, useState, useCallback } from "react";
+import { lazy, Suspense, useState } from "react";
 import StickyNav from "@/components/StickyNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import type { StateInfo, UserProfile } from "@/types/civic";
+import type { StateInfo } from "@/types/civic";
 
 const ElectionDashboard = lazy(() => import("@/components/ElectionDashboard"));
 const HistoricalComparison = lazy(() => import("@/components/HistoricalComparison"));

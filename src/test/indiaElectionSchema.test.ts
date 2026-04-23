@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { INDIA_STATES, type IndiaStateElectionData, NATIONAL_AVERAGE_TURNOUT, TOTAL_LOK_SABHA_SEATS } from "@/data/indiaElectionData";
-import { HISTORICAL_DATA, type StateHistoricalData } from "@/data/historicalData";
+import { INDIA_STATES, NATIONAL_AVERAGE_TURNOUT, TOTAL_LOK_SABHA_SEATS } from "@/data/indiaElectionData";
+import { HISTORICAL_DATA } from "@/data/historicalData";
 
 describe("India Election Data Schema Validation", () => {
   it("should have at least 36 entries (28 states + 8 UTs)", () => {

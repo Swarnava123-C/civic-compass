@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, memo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronRight, Award, RotateCcw, BookOpen } from "lucide-react";
-import { LEARNING_LEVELS, type LearningLevel, type LearningModule } from "@/data/learningPathData";
+import { LEARNING_LEVELS, type LearningModule } from "@/data/learningPathData";
 import { Progress } from "@/components/ui/progress";
 
 interface LearningState {
