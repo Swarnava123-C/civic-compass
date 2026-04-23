@@ -46,13 +46,15 @@ export function detectBrowserLanguage(): string {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored && INDIAN_LANGUAGES.some((l) => l.code === stored)) return stored;
 
-  const browserLang = navigator.language || (navigator as any).userLanguage || "en";
+  const browserLang = navigator.language || "en";
   const exact = BROWSER_TO_LANG[browserLang];
   if (exact) return exact;
 
   const prefix = browserLang.split("-")[0];
-  const prefixMatch = BROWSER_TO_LANG[prefix];
-  if (prefixMatch) return prefixMatch;
+  if (prefix) {
+    const prefixMatch = BROWSER_TO_LANG[prefix];
+    if (prefixMatch) return prefixMatch;
+  }
 
   return "hi"; // fallback to Hindi
 }
@@ -69,7 +71,9 @@ export function getLanguagesForState(stateCode: string): IndianLanguage[] {
   const matches = INDIAN_LANGUAGES.filter((l) => l.states.includes(stateCode));
   // Always include English and Hindi
   const codes = new Set(matches.map((m) => m.code));
-  if (!codes.has("en")) matches.push(INDIAN_LANGUAGES[0]);
-  if (!codes.has("hi")) matches.push(INDIAN_LANGUAGES[1]);
+  const en = INDIAN_LANGUAGES[0];
+  const hi = INDIAN_LANGUAGES[1];
+  if (en && !codes.has("en")) matches.push(en);
+  if (hi && !codes.has("hi")) matches.push(hi);
   return matches;
 }

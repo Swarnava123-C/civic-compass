@@ -19,7 +19,8 @@ export interface AnalyticsEvent {
   params?: Record<string, string | number | boolean>;
 }
 
-type Gtag = (...args: unknown[]) => void;
+type GtagArgs = [string, ...unknown[]];
+type Gtag = (...args: GtagArgs) => void;
 
 declare global {
   interface Window {
@@ -61,20 +62,20 @@ export function setAnalyticsConsent(granted: boolean): void {
 let initialised = false;
 
 export function initAnalytics(): void {
-  if (initialised || !getGaId()) return;
+  const gaId = getGaId();
+  if (initialised || !gaId) return;
   initialised = true;
 
   // Default consent — denied until user accepts
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag() {
-    // eslint-disable-next-line prefer-rest-params
-    window.dataLayer!.push(arguments);
+  window.dataLayer = window.dataLayer ?? [];
+  window.gtag = function gtag(...args: GtagArgs) {
+    window.dataLayer!.push(args);
   };
   window.gtag("js", new Date());
   window.gtag("consent", "default", {
     analytics_storage: hasAnalyticsConsent() ? "granted" : "denied",
   });
-  window.gtag("config", getGaId(), {
+  window.gtag("config", gaId, {
     send_page_view: true,
     anonymize_ip: true,
   });
@@ -82,7 +83,7 @@ export function initAnalytics(): void {
   // Load gtag.js script asynchronously
   const script = document.createElement("script");
   script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${getGaId()}`;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
   document.head.appendChild(script);
 }
 
@@ -91,7 +92,8 @@ export function initAnalytics(): void {
 /* ------------------------------------------------------------------ */
 
 function send(event: AnalyticsEvent): void {
-  if (!getGaId() || !window.gtag || !hasAnalyticsConsent()) return;
+  const gaId = getGaId();
+  if (!gaId || !window.gtag || !hasAnalyticsConsent()) return;
   window.gtag("event", event.name, event.params);
 }
 
@@ -136,6 +138,7 @@ export function trackChatMessage(detailLevel: string): void {
 
 /** Page view for SPA route changes */
 export function trackPageView(path: string): void {
-  if (!getGaId() || !window.gtag) return;
-  window.gtag("config", getGaId(), { page_path: path });
+  const gaId = getGaId();
+  if (!gaId || !window.gtag) return;
+  window.gtag("config", gaId, { page_path: path });
 }

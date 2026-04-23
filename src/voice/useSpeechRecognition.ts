@@ -1,5 +1,30 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
 interface SpeechRecognitionHook {
   isListening: boolean;
   transcript: string;
@@ -9,17 +34,19 @@ interface SpeechRecognitionHook {
   stopListening: () => void;
 }
 
+function getSpeechRecognitionAPI(): SpeechRecognitionConstructor | null {
+  if (typeof window === "undefined") return null;
+  const win = window as unknown as Record<string, unknown>;
+  return (win["SpeechRecognition"] ?? win["webkitSpeechRecognition"]) as SpeechRecognitionConstructor | null;
+}
+
 export function useSpeechRecognition(bcp47: string): SpeechRecognitionHook {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
-  const SpeechRecognitionAPI =
-    typeof window !== "undefined"
-      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      : null;
-
+  const SpeechRecognitionAPI = getSpeechRecognitionAPI();
   const isSupported = !!SpeechRecognitionAPI;
 
   const startListening = useCallback(() => {
@@ -40,15 +67,18 @@ export function useSpeechRecognition(bcp47: string): SpeechRecognitionHook {
         setError(null);
       };
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         let finalTranscript = "";
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          finalTranscript += event.results[i][0].transcript;
+          const result = event.results[i];
+          if (result?.[0]) {
+            finalTranscript += result[0].transcript;
+          }
         }
         setTranscript(finalTranscript);
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         const msg =
           event.error === "not-allowed"
             ? "Microphone permission denied"
@@ -88,6 +118,7 @@ export function useSpeechRecognition(bcp47: string): SpeechRecognitionHook {
       recognitionRef.current?.abort();
       setIsListening(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bcp47]);
 
   return { isListening, transcript, error, isSupported, startListening, stopListening };
