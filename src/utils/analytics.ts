@@ -61,7 +61,7 @@ export function setAnalyticsConsent(granted: boolean): void {
 let initialised = false;
 
 export function initAnalytics(): void {
-  if (initialised || !GA_ID) return;
+  if (initialised || !getGaId()) return;
   initialised = true;
 
   // Default consent — denied until user accepts
@@ -74,7 +74,7 @@ export function initAnalytics(): void {
   window.gtag("consent", "default", {
     analytics_storage: hasAnalyticsConsent() ? "granted" : "denied",
   });
-  window.gtag("config", GA_ID, {
+  window.gtag("config", getGaId(), {
     send_page_view: true,
     anonymize_ip: true,
   });
@@ -82,7 +82,7 @@ export function initAnalytics(): void {
   // Load gtag.js script asynchronously
   const script = document.createElement("script");
   script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${getGaId()}`;
   document.head.appendChild(script);
 }
 
@@ -91,7 +91,7 @@ export function initAnalytics(): void {
 /* ------------------------------------------------------------------ */
 
 function send(event: AnalyticsEvent): void {
-  if (!GA_ID || !window.gtag || !hasAnalyticsConsent()) return;
+  if (!getGaId() || !window.gtag || !hasAnalyticsConsent()) return;
   window.gtag("event", event.name, event.params);
 }
 
@@ -136,6 +136,6 @@ export function trackChatMessage(detailLevel: string): void {
 
 /** Page view for SPA route changes */
 export function trackPageView(path: string): void {
-  if (!GA_ID || !window.gtag) return;
-  window.gtag("config", GA_ID, { page_path: path });
+  if (!getGaId() || !window.gtag) return;
+  window.gtag("config", getGaId(), { page_path: path });
 }
