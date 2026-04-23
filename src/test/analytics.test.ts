@@ -57,9 +57,9 @@ describe("Analytics Service", () => {
     });
 
     it("sends events when gtag is available and consent granted", () => {
+      setAnalyticsConsent(true);
       const mockGtag = vi.fn();
       window.gtag = mockGtag;
-      setAnalyticsConsent(true);
 
       trackStateSelection("TN", "Tamil Nadu");
       expect(mockGtag).toHaveBeenCalledWith("event", "state_selection", {
