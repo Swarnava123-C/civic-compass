@@ -4,7 +4,8 @@ import { detectBrowserLanguage, persistLanguage, getLanguageByCode, INDIAN_LANGU
 export function useLanguage() {
   const [langCode, setLangCode] = useState<string>(() => detectBrowserLanguage());
 
-  const language: IndianLanguage = getLanguageByCode(langCode) ?? INDIAN_LANGUAGES[0];
+  const defaultLang = INDIAN_LANGUAGES[0];
+  const language: IndianLanguage = getLanguageByCode(langCode) ?? (defaultLang as IndianLanguage);
 
   const setLanguage = useCallback((code: string) => {
     setLangCode(code);

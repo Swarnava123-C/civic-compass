@@ -125,7 +125,7 @@ const ElectionDashboard = memo(function ElectionDashboard({ selectedState }: Ele
                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={30} />
                 <Tooltip
-                  formatter={(value: number) => [`${value}%`, "Turnout"]}
+                  formatter={(value) => [`${String(value)}%`, "Turnout"]}
                   contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }}
                 />
                 <Bar dataKey="turnout" fill="hsl(217, 72%, 41%)" radius={[0, 6, 6, 0]} />
@@ -159,7 +159,7 @@ const ElectionDashboard = memo(function ElectionDashboard({ selectedState }: Ele
                       <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [`${value}%`, "Vote Share"]} />
+                  <Tooltip formatter={(value) => [`${String(value)}%`, "Vote Share"]} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>

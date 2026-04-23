@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef as useReactRef, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Volume2, VolumeX, Languages, Minus, Plus, MessageSquare, AudioLines, Radio } from "lucide-react";
 import { useSpeechRecognition } from "./useSpeechRecognition";

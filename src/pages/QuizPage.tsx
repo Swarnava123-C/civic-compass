@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useCallback } from "react";
+import { lazy, Suspense, useCallback } from "react";
 import StickyNav from "@/components/StickyNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
 

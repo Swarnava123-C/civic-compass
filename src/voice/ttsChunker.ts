@@ -25,12 +25,12 @@ export function chunkTextForTTS(text: string, langCode: string): string[] {
   if (!text.trim()) return [];
 
   const cleaned = text
-    .replace(/[#*_`\[\]()>~|]/g, "")
+    .replace(/[#*_`[\]()>~|]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
-  const baseLang = langCode.split("-")[0];
-  const splitter = SENTENCE_ENDINGS[baseLang] || SENTENCE_ENDINGS.en;
+  const baseLang = langCode.split("-")[0] ?? "en";
+  const splitter = SENTENCE_ENDINGS[baseLang] ?? SENTENCE_ENDINGS["en"]!;
 
   // Split by sentence endings
   const rawSentences = cleaned.split(splitter).filter((s) => s.trim().length > 0);

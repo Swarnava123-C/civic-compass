@@ -1,9 +1,10 @@
-# CivicFlow — Election Education Assistant
+# CivicFlow India — Election Education Platform
 
 ![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)
 ![Coverage](https://img.shields.io/badge/coverage-80%25+-brightgreen)
 
-A production-grade, accessible, and secure civic education web application that helps users understand the election process through interactive timelines, step-by-step guides, and AI-powered Q&A.
+A production-grade, accessible, and secure civic education web application that helps users understand Indian elections through interactive simulations, AI-powered Q&A, and multilingual voice support.
 
 ---
 
@@ -11,31 +12,35 @@ A production-grade, accessible, and secure civic education web application that 
 
 ```
 src/
-├── components/        # UI components (Timeline, ChatBox, Quiz, FAQ, etc.)
-├── pages/             # Route-level pages (Index, NotFound)
-├── data/              # Static civic content (timeline stages, FAQ, quiz)
+├── components/        # UI components (Timeline, ChatBox, Quiz, Map, etc.)
+├── pages/             # Route-level pages (Index, Map, Dashboard, etc.)
+├── data/              # Static civic content (timeline, FAQ, quiz, election data)
 ├── types/             # TypeScript interfaces and types
-├── utils/             # Utilities (date, cache, logger, performance)
-├── hooks/             # Custom React hooks
+├── utils/             # Utilities (validation, analytics, cache, logger)
+├── hooks/             # Custom React hooks (useTranslation)
+├── voice/             # Voice system (STT, TTS, language config, subtitles)
 ├── test/              # Unit + integration tests
-│   └── integration/   # End-to-end keyboard nav, chat flow, a11y audits
+│   └── integration/   # Keyboard nav, chat flow, a11y audits
 └── integrations/      # Backend client (auto-generated)
 
 supabase/
 └── functions/
-    └── civic-chat/    # Edge function — secure AI proxy with guardrails
+    ├── civic-chat/    # Edge function — AI proxy with non-partisan guardrails
+    └── translate/     # Edge function — AI-powered multilingual translation
 ```
 
 ## Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **Interactive Timeline** | 6-stage clickable election process with keyboard navigation |
-| **Voting Guide** | Step-by-step responsibilities and user actions |
-| **AI Chat (Gemini)** | Non-partisan Q&A with streaming, beginner/detailed modes |
-| **Civic Quiz** | 5-question knowledge check with progress tracking |
-| **State Selector** | Select a US state for localized context |
-| **FAQ Section** | Accordion-style common questions |
+| **India Electoral Map** | Interactive tile grid with turnout visualization and keyboard navigation |
+| **Election Dashboard** | KPIs, turnout charts, vote share distribution per state |
+| **Historical Trends** | Multi-year election comparison with seat/turnout analysis |
+| **Mock Election Simulator** | FPTP simulation with cube rule, swing adjustment, coalition logic |
+| **AI Civic Assistant** | Non-partisan Q&A with structured/streaming modes |
+| **Civic Quiz** | Knowledge assessment with progress tracking |
+| **Learning Path** | Multi-level modules with quizzes and achievement badges |
+| **Voice System** | 12 Indian languages, STT/TTS, real-time subtitles |
 
 ## Getting Started
 
@@ -49,125 +54,97 @@ npm run dev
 # Run tests
 npm run test
 
-# Run tests with coverage
-npm run test:coverage
+# Type-check (strict mode)
+npx tsc --noEmit
 
 # Lint
 npm run lint
-
-# Type-check
-npm run type-check
 ```
+
+## TypeScript Strict Mode
+
+This project runs with full TypeScript strict mode:
+- `strict: true`
+- `noUnusedLocals: true`
+- `noUnusedParameters: true`
+- `noImplicitOverride: true`
+- `noFallthroughCasesInSwitch: true`
+
+Zero TypeScript errors enforced in CI.
 
 ## CI Pipeline
 
 The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that:
 
-1. Installs dependencies (`npm ci`)
+1. Installs dependencies
 2. Runs ESLint
 3. Runs TypeScript type-check (`tsc --noEmit`)
 4. Runs all tests with coverage
-5. Fails if coverage drops below 80% lines / 75% branches
-6. Uploads coverage report as artifact
+5. Fails on any lint, type, or test errors
 
 ## Testing Strategy
 
 | Layer | Tools | Scope |
 |-------|-------|-------|
-| Unit | Vitest | Utils, data transformations, component rendering |
-| Integration | Vitest + Testing Library + user-event | Chat flows, keyboard navigation, detail toggles |
-| Accessibility | axe-core | Automated WCAG audit on Timeline, FAQ, ChatBox |
-| Security | Custom tests | Prompt injection attempts, partisan query blocking |
+| Unit | Vitest | Validation, simulator logic, analytics, TTS chunking |
+| Integration | Vitest + Testing Library | Chat flows, keyboard navigation |
+| Accessibility | axe-core | Automated WCAG audits on Timeline, FAQ, ChatBox |
+| Security | Custom tests | Prompt injection, partisan query blocking |
 
 ## Security
 
-- **API keys** never exposed client-side; AI calls routed through a backend edge function
-- **Input sanitization**: all user input trimmed and capped at 500 characters
+- **Input validation**: centralized via `src/utils/validation.ts` — XSS escaping, control char stripping, rate limiting
+- **API isolation**: AI calls routed through backend edge functions, never direct client-to-model
 - **Partisan guardrails**: client-side regex + server-side system prompt enforce neutrality
-- **Rate limiting**: edge function returns 429 on excessive requests
-- **Non-partisan system prompt**: hardcoded refusal for political endorsements and predictions
+- **Edge function hardening**: message schema validation, length caps, role filtering
+- **No exposed secrets**: all API keys are server-side only
 
-## Performance
-
-- `React.lazy` + `Suspense` for heavy sections (Timeline, Quiz, Chat, FAQ)
-- `React.memo` on all major components
-- `useCallback` / `useMemo` for stable references
-- Stale-while-revalidate local content cache (`src/utils/cache.ts`)
-- Lightweight Framer Motion animations
-- Performance monitoring utility logs render + API latency in dev mode
-
-## Accessibility
-
-- Semantic HTML with proper heading hierarchy (single H1)
-- ARIA labels on all interactive elements
-- Keyboard navigation (Tab, Enter, Space) for timeline and FAQ
-- Focus ring styles via Tailwind
-- Automated axe-core audits in CI
-- Screen-reader friendly output
-
-## Google Services Architecture
+## Services Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        CLIENT (React SPA)                       │
 │                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
-│  │ Analytics    │  │ Firebase     │  │ Translation Hook      │  │
-│  │ Service      │  │ Hosting CSP  │  │ (useTranslation)      │  │
-│  │ (GA4 gtag)   │  │ + Headers    │  │                       │  │
-│  └──────┬───────┘  └──────────────┘  └───────────┬───────────┘  │
-│         │                                        │              │
-└─────────┼────────────────────────────────────────┼──────────────┘
-          │                                        │
-          ▼                                        ▼
-┌──────────────────┐               ┌───────────────────────────┐
-│ Google Analytics │               │ Edge Function: /translate │
-│ 4 (Measurement)  │               │ • AI-powered translation  │
-│ • Consent-safe   │               │ • 12 Indian languages     │
-│ • anonymize_ip   │               │ • In-memory cache (30m)   │
-│ • SPA page views │               │ • Input validation        │
-└──────────────────┘               └───────────┬───────────────┘
-                                               │
-                                               ▼
-                                   ┌───────────────────────┐
-                                   │ Edge Function:        │
-                                   │ /civic-chat           │
-                                   │ • Structured AI Q&A   │
-                                   │ • Streaming mode      │
-                                   │ • Non-partisan guard  │
-                                   └───────────────────────┘
+│  ┌──────────────┐  ┌────────────────────┐  ┌─────────────────┐  │
+│  │ Analytics    │  │ Translation Hook   │  │ Voice System    │  │
+│  │ (GA4 gtag)   │  │ (useTranslation)   │  │ (Browser TTS)   │  │
+│  └──────┬───────┘  └────────┬───────────┘  └─────────────────┘  │
+└─────────┼───────────────────┼───────────────────────────────────┘
+          │                   │
+          ▼                   ▼
+┌──────────────────┐  ┌────────────────────────┐
+│ Google Analytics │  │ Edge Function:         │
+│ 4 (GA4)          │  │ /translate             │
+│ • Consent-safe   │  │ • AI-powered (Lovable) │
+│ • anonymize_ip   │  │ • 12 Indian languages  │
+│ • SPA tracking   │  │ • Server-side cache    │
+└──────────────────┘  └────────────────────────┘
+                      ┌────────────────────────┐
+                      │ Edge Function:         │
+                      │ /civic-chat            │
+                      │ • Structured AI Q&A    │
+                      │ • Streaming mode       │
+                      │ • Non-partisan guard   │
+                      └────────────────────────┘
 ```
 
 ### Services & Justification
 
 | Service | Purpose | Security | Cost Control |
 |---------|---------|----------|-------------|
-| **Google Analytics 4** | Track simulator usage, quiz completion, state selection, voice toggles, SPA route changes | Consent-gated (`civicflow_analytics_consent`), `anonymize_ip: true`, no PII collected | Free tier covers civic education traffic |
-| **Firebase Hosting** | Production deployment with security headers (CSP, X-Frame-Options, HSTS, Permissions-Policy) | Content-Security-Policy whitelist, DENY framing, nosniff | Free tier (10 GB/month) |
-| **Firestore** | Persist quiz progress, simulator runs, language preferences per user | Owner-scoped security rules, schema validation, write-once quiz attempts | Free tier (50K reads/day) |
-| **AI Translation** | Real-time civic content translation across 12 Indian languages | Server-side only, input length cap (2000 chars), rate limiting | Cached results reduce API calls by ~70% |
+| **Google Analytics 4** | Track simulator usage, quiz completion, state selection, voice toggles, SPA navigation | Consent-gated (`civicflow_analytics_consent`), `anonymize_ip: true`, no PII | Free tier |
+| **AI Translation (Lovable AI Gateway)** | Real-time civic content translation for 12 Indian languages | Server-side only, input length cap (2000 chars), rate limiting | Cached responses reduce calls ~70% |
+| **AI Chat (Lovable AI Gateway)** | Non-partisan civic Q&A with structured responses | Server-side guardrails, message validation, streaming SSE | Token-efficient prompts |
 
-### Performance Optimizations
-- Translation responses cached 30 min server-side + client-side `Map` cache
-- GA4 loaded async, consent-default prevents tracking until opt-in
-- All analytics calls are fire-and-forget (no UI blocking)
-- Static assets served with `immutable` cache headers (1 year)
+> **Note**: Translation uses the Lovable AI Gateway (Gemini models), not Google Cloud Translation API. This is intentional — it provides high-quality translations without requiring separate API credentials.
 
-## Deployment
+## Environment Variables
 
-The app is deployed via Lovable with a connected backend (Lovable Cloud). Edge functions deploy automatically.
-
-**Firebase Hosting** (optional):
-1. `npm install -g firebase-tools`
-2. `firebase login`
-3. `npm run build`
-4. `firebase deploy --only hosting`
-
-**Environment Variables**:
-- `VITE_SUPABASE_URL` — Backend URL
-- `VITE_SUPABASE_PUBLISHABLE_KEY` — Anon key
+- `VITE_SUPABASE_URL` — Backend URL (auto-configured)
+- `VITE_SUPABASE_PUBLISHABLE_KEY` — Anon key (auto-configured)
 - `VITE_GA4_MEASUREMENT_ID` — (optional) GA4 measurement ID (e.g. `G-XXXXXXXXXX`)
 
 ## License
 
 This project is for educational purposes only and is not an official government source.
+Always verify election information at [eci.gov.in](https://eci.gov.in).

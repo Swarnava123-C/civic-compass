@@ -52,7 +52,7 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [detailLevel, setDetailLevel] = useState<DetailLevel>("beginner");
+  const [detailLevel] = useState<DetailLevel>("beginner");
   const [useStructured, setUseStructured] = useState(true);
   const [simpleMode, setSimpleMode] = useState(false);
   const [lastBreakdown, setLastBreakdown] = useState<ConfidenceBreakdown | null>(null);
@@ -145,8 +145,6 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
       e.preventDefault();
       const sanitized = sanitizeInput(input);
       if (!sanitized) return;
-
-      const mode = getVoiceMode();
 
       setInput("");
       setLastQuery(sanitized);

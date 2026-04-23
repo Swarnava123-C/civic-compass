@@ -1,7 +1,6 @@
-import { lazy, Suspense, useState, useCallback } from "react";
+import { lazy, Suspense } from "react";
 import StickyNav from "@/components/StickyNav";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import type { UserProfile, StateInfo } from "@/types/civic";
 
 const ChatBox = lazy(() => import("@/components/ChatBox"));
 
