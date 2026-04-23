@@ -1,4 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
+
+// Must set env before importing analytics module
+beforeAll(() => {
+  import.meta.env.VITE_GA4_MEASUREMENT_ID = "G-TEST12345";
+});
+
 import {
   hasAnalyticsConsent,
   setAnalyticsConsent,
