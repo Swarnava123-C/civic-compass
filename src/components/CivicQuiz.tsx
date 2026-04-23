@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, memo } from "react";
+import { trackQuizComplete } from "@/utils/analytics";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, RotateCcw, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
 import { QUIZ_QUESTIONS } from "@/data/civicContent";
@@ -40,6 +41,7 @@ const CivicQuiz = memo(function CivicQuiz({ onComplete }: CivicQuizProps) {
     } else {
       setFinished(true);
       onComplete?.(score, QUIZ_QUESTIONS.length);
+      trackQuizComplete(score, QUIZ_QUESTIONS.length);
     }
   }, [currentQ, score, onComplete]);
 
