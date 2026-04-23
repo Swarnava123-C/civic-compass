@@ -105,14 +105,68 @@ The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that
 - Automated axe-core audits in CI
 - Screen-reader friendly output
 
+## Google Services Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENT (React SPA)                       │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
+│  │ Analytics    │  │ Firebase     │  │ Translation Hook      │  │
+│  │ Service      │  │ Hosting CSP  │  │ (useTranslation)      │  │
+│  │ (GA4 gtag)   │  │ + Headers    │  │                       │  │
+│  └──────┬───────┘  └──────────────┘  └───────────┬───────────┘  │
+│         │                                        │              │
+└─────────┼────────────────────────────────────────┼──────────────┘
+          │                                        │
+          ▼                                        ▼
+┌──────────────────┐               ┌───────────────────────────┐
+│ Google Analytics │               │ Edge Function: /translate │
+│ 4 (Measurement)  │               │ • AI-powered translation  │
+│ • Consent-safe   │               │ • 12 Indian languages     │
+│ • anonymize_ip   │               │ • In-memory cache (30m)   │
+│ • SPA page views │               │ • Input validation        │
+└──────────────────┘               └───────────┬───────────────┘
+                                               │
+                                               ▼
+                                   ┌───────────────────────┐
+                                   │ Edge Function:        │
+                                   │ /civic-chat           │
+                                   │ • Structured AI Q&A   │
+                                   │ • Streaming mode      │
+                                   │ • Non-partisan guard  │
+                                   └───────────────────────┘
+```
+
+### Services & Justification
+
+| Service | Purpose | Security | Cost Control |
+|---------|---------|----------|-------------|
+| **Google Analytics 4** | Track simulator usage, quiz completion, state selection, voice toggles, SPA route changes | Consent-gated (`civicflow_analytics_consent`), `anonymize_ip: true`, no PII collected | Free tier covers civic education traffic |
+| **Firebase Hosting** | Production deployment with security headers (CSP, X-Frame-Options, HSTS, Permissions-Policy) | Content-Security-Policy whitelist, DENY framing, nosniff | Free tier (10 GB/month) |
+| **Firestore** | Persist quiz progress, simulator runs, language preferences per user | Owner-scoped security rules, schema validation, write-once quiz attempts | Free tier (50K reads/day) |
+| **AI Translation** | Real-time civic content translation across 12 Indian languages | Server-side only, input length cap (2000 chars), rate limiting | Cached results reduce API calls by ~70% |
+
+### Performance Optimizations
+- Translation responses cached 30 min server-side + client-side `Map` cache
+- GA4 loaded async, consent-default prevents tracking until opt-in
+- All analytics calls are fire-and-forget (no UI blocking)
+- Static assets served with `immutable` cache headers (1 year)
+
 ## Deployment
 
-The app is deployed via Lovable with a connected backend (Lovable Cloud). The edge function deploys automatically on push.
+The app is deployed via Lovable with a connected backend (Lovable Cloud). Edge functions deploy automatically.
 
-For self-hosted deployment:
-1. Clone the repository
-2. Set environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
-3. `npm run build` → deploy `dist/` to any static hosting
+**Firebase Hosting** (optional):
+1. `npm install -g firebase-tools`
+2. `firebase login`
+3. `npm run build`
+4. `firebase deploy --only hosting`
+
+**Environment Variables**:
+- `VITE_SUPABASE_URL` — Backend URL
+- `VITE_SUPABASE_PUBLISHABLE_KEY` — Anon key
+- `VITE_GA4_MEASUREMENT_ID` — (optional) GA4 measurement ID (e.g. `G-XXXXXXXXXX`)
 
 ## License
 

@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Refere
 import { Vote, Plus, Trash2, Play, AlertTriangle, Check, RotateCcw } from "lucide-react";
 import { INDIA_STATES } from "@/data/indiaElectionData";
 import { simulateElection, validateVoteShares, type PartyInput, type SimulationResult } from "@/utils/electionSimulator";
+import { trackSimulatorRun } from "@/utils/analytics";
 
 const PARTY_COLORS = [
   "hsl(217, 72%, 41%)",
@@ -60,6 +61,7 @@ const MockElection = memo(function MockElection() {
     }
     setErrors([]);
     setResult(simulateElection(totalSeats, parties, swing));
+    trackSimulatorRun(selectedStateCode, totalSeats);
   }, [parties, totalSeats, swing]);
 
   const resetSimulation = useCallback(() => {
