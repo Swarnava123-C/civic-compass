@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
 import { TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react";
@@ -16,15 +16,17 @@ const TrendArrow = memo(function TrendArrow({ value }: { value: number }) {
 });
 
 const HistoricalComparison = memo(function HistoricalComparison({ selectedState }: Props) {
-  const [viewState, setViewState] = useState<string>(HISTORICAL_DATA[0]?.stateCode ?? "UP");
+  const [viewState, setViewState] = useState<string>(selectedState?.code ?? HISTORICAL_DATA[0]?.stateCode ?? "UP");
 
-  // When a state is selected from map, use its data; otherwise use the manual selector
-  const activeData: StateHistoricalData | null = useMemo(() => {
+  useEffect(() => {
     if (selectedState) {
-      return getHistoricalDataForState(selectedState.code);
+      setViewState(selectedState.code);
     }
+  }, [selectedState]);
+
+  const activeData: StateHistoricalData | null = useMemo(() => {
     return getHistoricalDataForState(viewState);
-  }, [selectedState, viewState]);
+  }, [viewState]);
 
   if (!activeData) {
     return (
@@ -76,22 +78,20 @@ const HistoricalComparison = memo(function HistoricalComparison({ selectedState 
           Historical comparison of election outcomes — factual data only
         </p>
 
-        {!selectedState && (
-          <div className="flex justify-center gap-2 mb-6 flex-wrap">
-            {HISTORICAL_DATA.map((d) => (
-              <button
-                key={d.stateCode}
-                onClick={() => setViewState(d.stateCode)}
-                className={`px-3 py-1.5 rounded-full text-xs font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
-                  viewState === d.stateCode ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground hover:bg-muted"
-                }`}
-                aria-pressed={viewState === d.stateCode}
-              >
-                {d.stateName}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex justify-center gap-2 mb-6 flex-wrap">
+          {HISTORICAL_DATA.map((d) => (
+            <button
+              key={d.stateCode}
+              onClick={() => setViewState(d.stateCode)}
+              className={`px-3 py-1.5 rounded-full text-xs font-sans transition focus:outline-none focus:ring-2 focus:ring-ring ${
+                viewState === d.stateCode ? "bg-accent text-accent-foreground" : "bg-card border text-muted-foreground hover:bg-muted"
+              }`}
+              aria-pressed={viewState === d.stateCode}
+            >
+              {d.stateName}
+            </button>
+          ))}
+        </div>
 
         {/* Trend Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
