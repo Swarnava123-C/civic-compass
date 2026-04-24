@@ -14,7 +14,8 @@ Accessibility-first UI design
 
 This is an educational platform — not an official government source.
 
-🖼 Platform Preview
+🖼 Platform Preview 
+
 1️⃣ Interactive Election Dashboard
 
 National & state KPIs
