@@ -1,150 +1,181 @@
-# CivicFlow India — Election Education Platform
+🇮🇳 CivicFlow India — Election Education Platform
 
-![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)
-![Coverage](https://img.shields.io/badge/coverage-80%25+-brightgreen)
+A production-grade, secure, accessible civic education web platform that helps users understand Indian elections through interactive simulations, structured AI Q&A, multilingual translation, and voice-enabled learning.
 
-A production-grade, accessible, and secure civic education web application that helps users understand Indian elections through interactive simulations, AI-powered Q&A, and multilingual voice support.
+🎯 Project Objective
 
----
+CivicFlow aims to make Indian electoral systems understandable, transparent, and interactive for students and first-time voters through:
 
-## Architecture
+First-Past-The-Post simulation
+Historical election trend analysis
+AI-powered non-partisan Q&A
+Multilingual civic education
+Accessibility-first UI design
 
-```
+This is an educational platform — not an official government source.
+
+🖼 Platform Preview
+1️⃣ Interactive Election Dashboard
+
+National & state KPIs
+Turnout visualization
+Vote share distribution
+Fully keyboard navigable
+<img width="1871" height="843" alt="image" src="https://github.com/user-attachments/assets/bbba5e16-4a92-4a84-b2da-816fa4d6ef47" />
+
+<img width="1878" height="855" alt="image" src="https://github.com/user-attachments/assets/cceb2f65-3f55-4a2e-8395-e155c82b9416" />
+
+
+2️⃣ Mock Election Simulator (Core Feature)
+
+FPTP seat allocation logic
+Swing adjustment
+Coalition modeling
+Cube rule-based seat conversion
+Deterministic and test-covered simulation engine
+<img width="1870" height="829" alt="image" src="https://github.com/user-attachments/assets/174d00f9-5c57-4e74-9f8c-51d54a015c04" />
+
+3️⃣ AI Civic Assistant
+
+Structured response mode
+Streaming responses
+Non-partisan enforcement
+Prompt-injection protection
+Server-side API isolation
+<img width="1837" height="831" alt="image" src="https://github.com/user-attachments/assets/b56e2bd7-b514-454d-ba48-e15bcb039fd7" />
+
+4️⃣ Interactive India Electoral Map
+
+State-wise interaction
+Keyboard accessible tile grid
+Turnout-based visualization
+Dynamic state selection
+<img width="1865" height="841" alt="image" src="https://github.com/user-attachments/assets/99e30306-b953-4762-ad08-b6d399a81c6b" />
+
+5️⃣ Accessibility & Voice System
+
+12 Indian languages
+Speech-to-text (STT)
+Text-to-speech (TTS)
+Reduced motion support
+WCAG-aware UI structure
+🏗 Architecture
 src/
-├── components/        # UI components (Timeline, ChatBox, Quiz, Map, etc.)
-├── pages/             # Route-level pages (Index, Map, Dashboard, etc.)
-├── data/              # Static civic content (timeline, FAQ, quiz, election data)
-├── types/             # TypeScript interfaces and types
-├── utils/             # Utilities (validation, analytics, cache, logger)
-├── hooks/             # Custom React hooks (useTranslation)
-├── voice/             # Voice system (STT, TTS, language config, subtitles)
+├── components/        # Timeline, ChatBox, Quiz, Map, Dashboard
+├── pages/             # Route-level pages
+├── data/              # Civic content (timeline, FAQ, election data)
+├── types/             # Strict TypeScript types
+├── utils/             # Validation, simulator, analytics, logger
+├── hooks/             # Custom hooks (useTranslation)
+├── voice/             # STT, TTS, subtitles
 ├── test/              # Unit + integration tests
-│   └── integration/   # Keyboard nav, chat flow, a11y audits
-└── integrations/      # Backend client (auto-generated)
+│   └── integration/   # Keyboard nav, AI flow, accessibility audits
+└── integrations/      # Backend client
 
 supabase/
 └── functions/
-    ├── civic-chat/    # Edge function — AI proxy with non-partisan guardrails
-    └── translate/     # Edge function — AI-powered multilingual translation
-```
+    ├── civic-chat/    # AI proxy with non-partisan guardrails
+    └── translate/     # Multilingual translation proxy
+🧠 Core Features
+Feature	Description
+Election Dashboard	State-wise turnout & vote share
+Historical Trends	Multi-election comparison
+Mock Election Simulator	FPTP logic with swing & coalition modeling
+AI Civic Assistant	Structured, neutral civic Q&A
+Civic Quiz	Knowledge evaluation
+Learning Path	Progressive civic modules
+Voice System	12 languages, STT + TTS
+Accessibility	Reduced motion, keyboard nav, ARIA support
+🔐 Security Design
+Centralized input validation (validation.ts)
+XSS sanitization & control character stripping
+Rate limiting for AI endpoints
+Server-side AI proxy (no direct client-to-model)
+Message schema validation
+Neutrality enforcement (client + server)
+No exposed API secrets
+🧪 Testing Strategy
+Layer	Tools	Scope
+Unit	Vitest	Simulator logic, validation, analytics
+Integration	Testing Library	Chat flow, keyboard navigation
+Accessibility	axe-core	Automated WCAG audits
+Security	Custom tests	Prompt injection & partisan blocking
 
-## Key Features
+✔ Zero TypeScript errors
+✔ ESLint clean
+✔ CI enforced
 
-| Feature | Description |
-|---------|-------------|
-| **India Electoral Map** | Interactive tile grid with turnout visualization and keyboard navigation |
-| **Election Dashboard** | KPIs, turnout charts, vote share distribution per state |
-| **Historical Trends** | Multi-year election comparison with seat/turnout analysis |
-| **Mock Election Simulator** | FPTP simulation with cube rule, swing adjustment, coalition logic |
-| **AI Civic Assistant** | Non-partisan Q&A with structured/streaming modes |
-| **Civic Quiz** | Knowledge assessment with progress tracking |
-| **Learning Path** | Multi-level modules with quizzes and achievement badges |
-| **Voice System** | 12 Indian languages, STT/TTS, real-time subtitles |
+⚙ TypeScript Strict Mode
+strict: true
+noUnusedLocals: true
+noUnusedParameters: true
+noImplicitOverride: true
+noFallthroughCasesInSwitch: true
 
-## Getting Started
+All builds fail on type violations.
 
-```bash
-# Install dependencies
+🔄 CI Pipeline
+
+GitHub Actions workflow:
+
+Install dependencies
+ESLint check
+Type-check (tsc --noEmit)
+Run tests with coverage
+Fail on any errors
+📊 Services Architecture
+CLIENT (React SPA)
+   │
+   ├── Google Analytics 4 (consent gated)
+   ├── Translation Hook
+   ├── Voice System
+   │
+   ▼
+Edge Functions (Server-side)
+   ├── /civic-chat (AI proxy)
+   └── /translate (AI translation)
+📈 Services & Justification
+Service	Purpose	Security	Cost Control
+Google Analytics 4	Simulator & feature usage	anonymize_ip, consent gated	Free tier
+AI Translation	12-language civic content	Server-only calls	Cached
+AI Chat	Structured Q&A	Guardrails + validation	Token optimized
+
+Translation uses Lovable AI Gateway (Gemini models).
+No direct client exposure to AI APIs.
+
+🚀 Getting Started
 npm install
-
-# Start development server
 npm run dev
-
-# Run tests
-npm run test
-
-# Type-check (strict mode)
-npx tsc --noEmit
-
-# Lint
 npm run lint
-```
+npm run test
+npx tsc --noEmit
+npm run build
+🌍 Deployment
 
-## TypeScript Strict Mode
+Built with:
 
-This project runs with full TypeScript strict mode:
-- `strict: true`
-- `noUnusedLocals: true`
-- `noUnusedParameters: true`
-- `noImplicitOverride: true`
-- `noFallthroughCasesInSwitch: true`
+Vite
+React + TypeScript
+Tailwind CSS
+Supabase Edge Functions
 
-Zero TypeScript errors enforced in CI.
+Optimized production bundle
+Tree-shaken and code-split
 
-## CI Pipeline
+📜 License
 
-The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that:
+Educational use only.
+Not affiliated with the Election Commission of India.
+Verify official information at https://eci.gov.in
 
-1. Installs dependencies
-2. Runs ESLint
-3. Runs TypeScript type-check (`tsc --noEmit`)
-4. Runs all tests with coverage
-5. Fails on any lint, type, or test errors
+🏁 Evaluation Criteria Alignment
 
-## Testing Strategy
+✔ Technical Depth (simulation engine + AI proxy)
+✔ Code Quality (strict TS + lint + CI)
+✔ Security (server-side isolation + validation)
+✔ Accessibility (WCAG + reduced motion + keyboard nav)
+✔ Real-World Utility (multilingual civic education)
 
-| Layer | Tools | Scope |
-|-------|-------|-------|
-| Unit | Vitest | Validation, simulator logic, analytics, TTS chunking |
-| Integration | Vitest + Testing Library | Chat flows, keyboard navigation |
-| Accessibility | axe-core | Automated WCAG audits on Timeline, FAQ, ChatBox |
-| Security | Custom tests | Prompt injection, partisan query blocking |
+🎯 Final Notes
 
-## Security
-
-- **Input validation**: centralized via `src/utils/validation.ts` — XSS escaping, control char stripping, rate limiting
-- **API isolation**: AI calls routed through backend edge functions, never direct client-to-model
-- **Partisan guardrails**: client-side regex + server-side system prompt enforce neutrality
-- **Edge function hardening**: message schema validation, length caps, role filtering
-- **No exposed secrets**: all API keys are server-side only
-
-## Services Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT (React SPA)                       │
-│                                                                 │
-│  ┌──────────────┐  ┌────────────────────┐  ┌─────────────────┐  │
-│  │ Analytics    │  │ Translation Hook   │  │ Voice System    │  │
-│  │ (GA4 gtag)   │  │ (useTranslation)   │  │ (Browser TTS)   │  │
-│  └──────┬───────┘  └────────┬───────────┘  └─────────────────┘  │
-└─────────┼───────────────────┼───────────────────────────────────┘
-          │                   │
-          ▼                   ▼
-┌──────────────────┐  ┌────────────────────────┐
-│ Google Analytics │  │ Edge Function:         │
-│ 4 (GA4)          │  │ /translate             │
-│ • Consent-safe   │  │ • AI-powered (Lovable) │
-│ • anonymize_ip   │  │ • 12 Indian languages  │
-│ • SPA tracking   │  │ • Server-side cache    │
-└──────────────────┘  └────────────────────────┘
-                      ┌────────────────────────┐
-                      │ Edge Function:         │
-                      │ /civic-chat            │
-                      │ • Structured AI Q&A    │
-                      │ • Streaming mode       │
-                      │ • Non-partisan guard   │
-                      └────────────────────────┘
-```
-
-### Services & Justification
-
-| Service | Purpose | Security | Cost Control |
-|---------|---------|----------|-------------|
-| **Google Analytics 4** | Track simulator usage, quiz completion, state selection, voice toggles, SPA navigation | Consent-gated (`civicflow_analytics_consent`), `anonymize_ip: true`, no PII | Free tier |
-| **AI Translation (Lovable AI Gateway)** | Real-time civic content translation for 12 Indian languages | Server-side only, input length cap (2000 chars), rate limiting | Cached responses reduce calls ~70% |
-| **AI Chat (Lovable AI Gateway)** | Non-partisan civic Q&A with structured responses | Server-side guardrails, message validation, streaming SSE | Token-efficient prompts |
-
-> **Note**: Translation uses the Lovable AI Gateway (Gemini models), not Google Cloud Translation API. This is intentional — it provides high-quality translations without requiring separate API credentials.
-
-## Environment Variables
-
-- `VITE_SUPABASE_URL` — Backend URL (auto-configured)
-- `VITE_SUPABASE_PUBLISHABLE_KEY` — Anon key (auto-configured)
-- `VITE_GA4_MEASUREMENT_ID` — (optional) GA4 measurement ID (e.g. `G-XXXXXXXXXX`)
-
-## License
-
-This project is for educational purposes only and is not an official government source.
-Always verify election information at [eci.gov.in](https://eci.gov.in).
+CivicFlow demonstrates how AI, simulation modeling, and accessibility engineering can be combined to improve civic literacy at scale.
