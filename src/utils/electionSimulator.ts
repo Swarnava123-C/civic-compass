@@ -80,7 +80,7 @@ export function simulateElection(
   const cubed = normalized.map(p => Math.pow(p.voteSharePercent / 100, 3));
   const cubedTotal = cubed.reduce((s, v) => s + v, 0);
 
-  let seatAllocation = normalized.map((p, i) => ({
+  const seatAllocation = normalized.map((p, i) => ({
     name: p.name,
     rawSeats: cubedTotal > 0 ? (cubed[i] / cubedTotal) * totalSeats : 0,
     voteShare: p.voteSharePercent,
@@ -88,7 +88,7 @@ export function simulateElection(
 
   // Round using largest remainder method
   const flooredSeats = seatAllocation.map(p => Math.floor(p.rawSeats));
-  let remaining = totalSeats - flooredSeats.reduce((s, v) => s + v, 0);
+  const remaining = totalSeats - flooredSeats.reduce((s, v) => s + v, 0);
   const remainders = seatAllocation.map((p, i) => ({
     index: i,
     remainder: p.rawSeats - flooredSeats[i],

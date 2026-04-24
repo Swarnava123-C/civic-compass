@@ -28,4 +28,10 @@ export default tseslint.config(
       eqeqeq: ["error", "always"],
     },
   },
+  {
+    files: ["src/components/ui/**/*.tsx", "src/components/ui/**/*.ts"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  }
 );

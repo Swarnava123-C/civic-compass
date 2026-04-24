@@ -246,7 +246,7 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
         let textBuffer = "";
         let msgAdded = false;
 
-        // eslint-disable-next-line no-constant-condition
+         
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;

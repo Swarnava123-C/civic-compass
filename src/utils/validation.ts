@@ -21,7 +21,8 @@ export function escapeHtml(str: string): string {
 
 /** Sanitize and clamp user text input */
 export function sanitizeTextInput(input: string, maxLength = 500): string {
-  return input.trim().replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "").slice(0, maxLength);
+  // eslint-disable-next-line no-control-regex
+  return input.trim().replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").slice(0, maxLength);
 }
 
 /** Validate numeric input is within range */
