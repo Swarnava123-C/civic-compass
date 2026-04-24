@@ -62,10 +62,8 @@ The platform combines simulation logic, structured AI assistance, accessibility 
 
 
 
-```md
-<img width="1872" height="833" alt="image" src="https://github.com/user-attachments/assets/37e4db4d-a767-4b3f-9b5b-114bba03e2eb" />
 
-```
+<img width="1872" height="833" alt="image" src="https://github.com/user-attachments/assets/37e4db4d-a767-4b3f-9b5b-114bba03e2eb" />
 
 ---
 
@@ -79,10 +77,8 @@ The platform combines simulation logic, structured AI assistance, accessibility 
 
 
 
-```md
-<img width="1860" height="844" alt="image" src="https://github.com/user-attachments/assets/8043ef62-1321-4607-925c-87f5bdf14983" />
 
-```
+<img width="1860" height="844" alt="image" src="https://github.com/user-attachments/assets/8043ef62-1321-4607-925c-87f5bdf14983" />
 
 ---
 
@@ -93,12 +89,10 @@ The platform combines simulation logic, structured AI assistance, accessibility 
 * Turnout-based visualization
 * Dynamic state selection
 
-📸 Add screenshot here:
 
-```md
+
+
 <img width="1870" height="840" alt="image" src="https://github.com/user-attachments/assets/83c8f788-1bc5-4321-9949-2468a9376ad5" />
-
-```
 
 ---
 
