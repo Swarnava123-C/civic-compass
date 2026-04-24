@@ -44,10 +44,9 @@ The platform combines simulation logic, structured AI assistance, accessibility 
 
 
 
-```md
 
-```
 <img width="1885" height="852" alt="image" src="https://github.com/user-attachments/assets/1b23c4f8-4c20-448b-989e-29553d3d308e" />
+
 
 <img width="1877" height="848" alt="image" src="https://github.com/user-attachments/assets/befa6b43-5a96-4e53-95e1-f3e1380e67ba" />
 
