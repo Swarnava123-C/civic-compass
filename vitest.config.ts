@@ -9,9 +9,13 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    clearMocks: true,
+    restoreMocks: true,
+    mockReset: true,
+    isolate: true,
     coverage: {
       provider: "v8",
-      reporter: ["text", "html", "lcov"],
+      reporter: ["text", "html", "lcov", "json-summary"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/test/**",
@@ -25,9 +29,11 @@ export default defineConfig({
       thresholds: {
         lines: 80,
         functions: 80,
-        branches: 75,
+        branches: 80,
         statements: 80,
+        autoUpdate: false,
       },
+      reportOnFailure: true,
     },
   },
   resolve: {

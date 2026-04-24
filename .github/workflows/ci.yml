@@ -31,16 +31,29 @@ jobs:
       - name: Type-check
         run: npm run type-check
 
-      - name: Run tests with coverage
+      - name: Run tests with coverage (enforces 80% threshold)
         run: npm run test:coverage
 
-      - name: Check coverage threshold
+      - name: Coverage summary
+        if: always()
         run: |
-          COVERAGE=$(npx vitest run --coverage --reporter=json 2>/dev/null | grep -o '"lines":[0-9.]*' | head -1 | grep -o '[0-9.]*' || echo "0")
-          echo "Line coverage: $COVERAGE%"
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "const c=require('./coverage/coverage-summary.json').total;console.log('Coverage — lines:'+c.lines.pct+'% functions:'+c.functions.pct+'% branches:'+c.branches.pct+'% statements:'+c.statements.pct+'%')"
+          fi
+
+      - name: Security audit (high severity, production deps)
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Build
         run: npm run build
+
+      - name: Bundle size check (warn >250kb gzipped, fail >300kb)
+        run: |
+          TOTAL=$(find dist/assets -name "*.js" -exec gzip -c {} + | wc -c)
+          KB=$((TOTAL / 1024))
+          echo "Gzipped JS bundle: ${KB} KB"
+          if [ "$KB" -gt 300 ]; then echo "::error::Bundle size ${KB}KB exceeds 300KB limit"; exit 1; fi
+          if [ "$KB" -gt 250 ]; then echo "::warning::Bundle size ${KB}KB exceeds 250KB warning threshold"; fi
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
