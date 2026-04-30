@@ -23,8 +23,31 @@ function emit(entry: LogEntry): void {
 }
 
 export const logger = {
+  /**
+   * Logs an informational message.
+   * @param {string} msg - The message to log.
+   * @param {Record<string, unknown>} [data] - Optional metadata to include.
+   */
   info: (msg: string, data?: Record<string, unknown>) => emit(createEntry("info", msg, data)),
+
+  /**
+   * Logs a warning message.
+   * @param {string} msg - The warning message.
+   * @param {Record<string, unknown>} [data] - Optional metadata to include.
+   */
   warn: (msg: string, data?: Record<string, unknown>) => emit(createEntry("warn", msg, data)),
+
+  /**
+   * Logs an error message.
+   * @param {string} msg - The error message.
+   * @param {Record<string, unknown>} [data] - Optional metadata to include.
+   */
   error: (msg: string, data?: Record<string, unknown>) => emit(createEntry("error", msg, data)),
+
+  /**
+   * Logs a debug message (only emitted in development).
+   * @param {string} msg - The debug message.
+   * @param {Record<string, unknown>} [data] - Optional metadata to include.
+   */
   debug: (msg: string, data?: Record<string, unknown>) => emit(createEntry("debug", msg, data)),
 };

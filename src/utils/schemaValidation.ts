@@ -19,6 +19,14 @@ export interface ValidationResult {
   errors: string[];
 }
 
+/**
+ * Validates a raw object against the StructuredAIResponse schema using Zod.
+ * This ensures that data received from AI models conforms to the expected format
+ * and prevents runtime errors in the UI.
+ *
+ * @param {unknown} raw - The raw data object to validate.
+ * @returns {ValidationResult} An object containing the validation status, parsed data, and any errors.
+ */
 export function validateStructuredResponse(raw: unknown): ValidationResult {
   const result = structuredAIResponseSchema.safeParse(raw);
 

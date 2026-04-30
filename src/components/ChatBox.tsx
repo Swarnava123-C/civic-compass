@@ -60,7 +60,6 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
   const [lastQuery, setLastQuery] = useState("");
   const [lastStructured, setLastStructured] = useState<StructuredAIResponse | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -336,7 +335,7 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
         setIsLoading(false);
       }
     },
-    [input, messages, addMessage, effectiveDetailLevel, supabaseUrl, useStructured, profile, loadingMessages, simpleMode]
+    [input, messages, addMessage, effectiveDetailLevel, supabaseUrl, useStructured, profile, loadingMessages, simpleMode, selectedImage, removeImage]
   );
 
   const confidenceColor = useCallback((c?: ChatMessage["confidence"]) => {

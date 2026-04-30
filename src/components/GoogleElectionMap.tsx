@@ -103,7 +103,7 @@ const GoogleElectionMap = memo(function GoogleElectionMap({ selectedState, onSel
         weight: state.voterTurnout,
       };
     }).filter(Boolean) as google.maps.visualization.WeightedLocation[];
-  }, [isLoaded]);
+  }, []);
 
   const onMarkerClick = useCallback((code: string, name: string) => {
     if (selectedState?.code === code) {
