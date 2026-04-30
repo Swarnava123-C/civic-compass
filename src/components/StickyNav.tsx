@@ -1,7 +1,9 @@
 import { memo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, Users, MessageSquare, Trophy, Menu, X, Map, Clock, Zap } from "lucide-react";
+import { BarChart3, Users, MessageSquare, Trophy, Menu, X, Map, Clock, Zap, Sun, Moon, Eye } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTheme } from "next-themes";
+import { trackThemeToggle } from "@/utils/analytics";
 
 const NAV_ITEMS = [
   { id: "home", label: "Home", icon: Zap, path: "/" },
@@ -17,6 +19,15 @@ const StickyNav = memo(function StickyNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
+
+  const toggleTheme = useCallback(() => {
+    const themes = ["light", "dark", "high-contrast"];
+    const currentIdx = themes.indexOf(theme || "light");
+    const nextTheme = themes[(currentIdx + 1) % themes.length];
+    setTheme(nextTheme);
+    trackThemeToggle(nextTheme);
+  }, [theme, setTheme]);
 
   const handleNav = useCallback((item: typeof NAV_ITEMS[0]) => {
     setMobileOpen(false);
@@ -79,6 +90,17 @@ const StickyNav = memo(function StickyNav() {
                 </button>
               );
             })}
+            <div className="w-px h-6 bg-border mx-2" />
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-muted-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label={`Current theme: ${theme}. Click to switch theme.`}
+            >
+              {theme === "light" && <Sun className="w-4 h-4" />}
+              {theme === "dark" && <Moon className="w-4 h-4" />}
+              {theme === "high-contrast" && <Eye className="w-4 h-4" />}
+              {!theme && <Sun className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
@@ -88,13 +110,22 @@ const StickyNav = memo(function StickyNav() {
             <span className="w-6 h-6 rounded-md bg-accent flex items-center justify-center text-accent-foreground text-[10px]">🇮🇳</span>
             CivicFlow
           </button>
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 rounded-lg text-muted-foreground hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-muted-foreground hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Switch theme"
+            >
+              {theme === "high-contrast" ? <Eye className="w-5 h-5" /> : theme === "dark" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </button>
+            <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="p-2 rounded-lg text-muted-foreground hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring"
+                aria-label="Toggle navigation menu"
+            >
+                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         <AnimatePresence>

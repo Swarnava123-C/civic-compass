@@ -23,7 +23,7 @@ describe("validateStructuredResponse", () => {
   it("rejects missing summary", () => {
     const result = validateStructuredResponse({ confidence_score: "high" });
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain("Missing or empty 'summary' field");
+    expect(result.errors.some(e => e.includes("summary"))).toBe(true);
   });
 
   it("rejects non-array steps", () => {

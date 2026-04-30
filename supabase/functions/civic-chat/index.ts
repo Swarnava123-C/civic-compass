@@ -122,11 +122,22 @@ serve(async (req) => {
         : "Provide simple, beginner-friendly explanations about Indian elections. Use short sentences and avoid legal jargon.";
 
     const apiMessages = [
-      { role: "system", content: `${SYSTEM_PROMPT}\n\n${levelInstruction}` },
-      ...(messages as Array<{ role: string; content: string }>).map((m) => ({
-        role: m.role,
-        content: m.content.slice(0, MAX_MESSAGE_LENGTH),
-      })),
+      { role: "system", content: `${SYSTEM_PROMPT}\n\n${levelInstruction}\n\nIf the user provides an image, analyze it in the context of Indian elections and civic documentation (e.g., Voter ID, Election Slip).` },
+      ...(messages as Array<{ role: string; content: string; image?: string }>).map((m) => {
+        if (m.role === "user" && m.image) {
+          return {
+            role: m.role,
+            content: [
+              { type: "text", text: m.content.slice(0, MAX_MESSAGE_LENGTH) },
+              { type: "image_url", image_url: { url: m.image } }
+            ],
+          };
+        }
+        return {
+          role: m.role,
+          content: m.content.slice(0, MAX_MESSAGE_LENGTH),
+        };
+      }),
     ];
 
     if (structured) {

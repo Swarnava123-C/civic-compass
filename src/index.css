@@ -100,6 +100,28 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  .high-contrast {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 80%;
+    --accent: 60 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 100%;
+    --input: 0 0% 100%;
+    --ring: 60 100% 50%;
+  }
 }
 
 @layer base {
@@ -129,11 +151,11 @@
   }
 
   .civic-card {
-    @apply bg-card rounded-2xl border shadow-sm transition-all duration-300;
+    @apply bg-card/60 backdrop-blur-md rounded-2xl border shadow-sm transition-all duration-500;
   }
 
   .civic-card-hover {
-    @apply civic-card hover:shadow-lg hover:-translate-y-0.5 hover:border-accent/20;
+    @apply civic-card hover:shadow-2xl hover:-translate-y-1 hover:border-accent/40 hover:bg-card/80;
   }
 
   .civic-badge {
@@ -171,15 +193,18 @@
     @apply backdrop-blur-xl bg-card/80 border border-border/50;
   }
 
+  .civic-glass-premium {
+    @apply backdrop-blur-2xl bg-white/10 border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)];
+  }
+
   .civic-glow-primary {
-    box-shadow: 0 0 20px hsl(var(--civic-sky) / 0.15);
+    box-shadow: 0 0 30px hsl(var(--civic-sky) / 0.2);
   }
 
   .civic-bg-grid {
     background-image:
-      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
-    background-size: 40px 40px;
+      radial-gradient(hsl(var(--accent) / 0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
   }
 }
 

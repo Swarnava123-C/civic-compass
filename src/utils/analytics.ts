@@ -132,8 +132,18 @@ export function trackLanguageChange(languageCode: string): void {
 }
 
 /** User sends a chat message */
-export function trackChatMessage(detailLevel: string): void {
-  send({ name: "chat_message", params: { detail_level: detailLevel } });
+export function trackChatMessage(detailLevel: string, hasImage: boolean = false): void {
+  send({ name: "chat_message", params: { detail_level: detailLevel, has_image: hasImage } });
+}
+
+/** User uploads a document for analysis */
+export function trackDocumentUpload(fileType: string): void {
+  send({ name: "document_upload", params: { file_type: fileType } });
+}
+
+/** User toggles accessibility theme */
+export function trackThemeToggle(theme: string): void {
+  send({ name: "theme_toggle", params: { theme_name: theme } });
 }
 
 /** Page view for SPA route changes */

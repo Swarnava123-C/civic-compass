@@ -22,7 +22,11 @@ export function escapeHtml(str: string): string {
 /** Sanitize and clamp user text input */
 export function sanitizeTextInput(input: string, maxLength = 500): string {
   // eslint-disable-next-line no-control-regex
-  return input.trim().replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").slice(0, maxLength);
+  return input
+    .trim()
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "") // Remove control characters
+    .replace(/[^\w\s\?\!\.\,\-\(\)\u0900-\u097F]/gi, "") // Allow standard punctuation and Devanagari script
+    .slice(0, maxLength);
 }
 
 /** Validate numeric input is within range */
@@ -42,6 +46,12 @@ export function isValidPartyName(name: string): boolean {
   // Block obvious script patterns
   if (/<script|javascript:|on\w+=/i.test(name)) return false;
   return true;
+}
+
+/** Validate EPIC (Voter ID) number format */
+export function isValidEPIC(epic: string): boolean {
+  const epicRegex = /^[A-Z]{3}[0-9]{7}$/;
+  return epicRegex.test(epic.toUpperCase().trim());
 }
 
 /** Validate age input */

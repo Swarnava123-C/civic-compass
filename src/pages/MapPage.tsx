@@ -4,6 +4,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import type { StateInfo } from "@/types/civic";
 
 const IndiaMap = lazy(() => import("@/components/IndiaMap"));
+const GoogleElectionMap = lazy(() => import("@/components/GoogleElectionMap"));
 const StateInfoPanel = lazy(() => import("@/components/StateInfoPanel"));
 
 function LoadingSkeleton() {
@@ -20,6 +21,7 @@ function LoadingSkeleton() {
 
 const MapPage = () => {
   const [selectedState, setSelectedState] = useState<StateInfo | null>(null);
+  const hasApiKey = !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   const handleMapSelect = useCallback((state: StateInfo | null) => {
     setSelectedState(state);
@@ -31,7 +33,11 @@ const MapPage = () => {
         <StickyNav />
         <div className="pt-4">
           <Suspense fallback={<LoadingSkeleton />}>
-            <IndiaMap selectedState={selectedState} onSelectState={handleMapSelect} />
+            {hasApiKey ? (
+              <GoogleElectionMap selectedState={selectedState} onSelectState={handleMapSelect} />
+            ) : (
+              <IndiaMap selectedState={selectedState} onSelectState={handleMapSelect} />
+            )}
           </Suspense>
           {selectedState && (
             <Suspense fallback={<LoadingSkeleton />}>

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, memo, useMemo, lazy, Suspense, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Loader2, Sparkles, MessageSquare, Eye } from "lucide-react";
+import { Send, Loader2, Sparkles, MessageSquare, Eye, Image as ImageIcon, X } from "lucide-react";
 import { sanitizeInput } from "@/utils/date";
 import { logger } from "@/utils/logger";
 import { trackApiLatency } from "@/utils/performance";
@@ -15,6 +15,7 @@ import { getVoiceMode } from "@/voice/voiceModeStore";
 import type { ChatMessage, DetailLevel, StructuredAIResponse, UserProfile, ConfidenceBreakdown, StateInfo } from "@/types/civic";
 import type { VoiceCommand } from "@/voice/voiceCommands";
 import { FAQ_ITEMS } from "@/data/civicContent";
+import { toast } from "sonner";
 
 const VoiceControls = lazy(() => import("@/voice/VoiceControls"));
 
@@ -58,7 +59,10 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
   const [lastBreakdown, setLastBreakdown] = useState<ConfidenceBreakdown | null>(null);
   const [lastQuery, setLastQuery] = useState("");
   const [lastStructured, setLastStructured] = useState<StructuredAIResponse | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const speakRef = useRef<((text: string) => void) | null>(null);
   const prevMsgCountRef = useRef(0);
@@ -140,6 +144,26 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
     prevMsgCountRef.current = messages.length;
   }, [messages]);
 
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Image too large (max 2MB)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, []);
+
+  const removeImage = useCallback(() => {
+    setSelectedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -187,8 +211,14 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
       try {
         const allMessages = [
           ...messages.map((m) => ({ role: m.role, content: m.content })),
-          { role: "user" as const, content: sanitized },
+          { 
+            role: "user" as const, 
+            content: sanitized,
+            image: selectedImage || undefined 
+          },
         ];
+
+        if (selectedImage) removeImage();
 
         if (useStructured) {
           const resp = await fetch(`${supabaseUrl}/functions/v1/civic-chat`, {
@@ -201,6 +231,8 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
           });
 
           trackApiLatency("civic-chat-structured", startTime);
+          const { trackChatMessage } = await import("@/utils/analytics");
+          trackChatMessage(effectiveDetailLevel, !!selectedImage);
 
           if (resp.status === 429) { addMessage("assistant", "Too many requests. Please wait a moment and try again.", "low"); return; }
           if (resp.status === 402) { addMessage("assistant", "Service temporarily unavailable. Please try again later.", "low"); return; }
@@ -234,6 +266,8 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
         });
 
         trackApiLatency("civic-chat-stream", startTime);
+        const { trackChatMessage } = await import("@/utils/analytics");
+        trackChatMessage(effectiveDetailLevel, !!selectedImage);
 
         if (resp.status === 429) { addMessage("assistant", "Too many requests. Please wait a moment and try again.", "low"); return; }
         if (resp.status === 402) { addMessage("assistant", "Service temporarily unavailable. Please try again later.", "low"); return; }
@@ -467,6 +501,20 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
           </div>
         )}
 
+        {/* Image Preview */}
+        {selectedImage && (
+          <div className="mb-4 relative inline-block">
+            <img src={selectedImage} alt="Preview" className="w-24 h-24 object-cover rounded-lg border-2 border-accent" />
+            <button
+              onClick={removeImage}
+              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:opacity-90 transition"
+              aria-label="Remove image"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
         {/* Input */}
         <form id="chat-form" onSubmit={handleSubmit} className="flex gap-2">
           <input
@@ -480,6 +528,25 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
             aria-label="Type your question about elections"
             disabled={isLoading}
           />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+            aria-label="Upload document image"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading}
+            className={`px-3 py-3 rounded-xl border font-sans transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring ${
+              selectedImage ? "text-accent border-accent" : "text-muted-foreground"
+            }`}
+            aria-label="Attach image"
+          >
+            <ImageIcon className="w-5 h-5" />
+          </button>
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
