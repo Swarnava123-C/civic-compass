@@ -325,11 +325,11 @@ const ChatBox = memo(function ChatBox({ profile, selectedState }: ChatBoxProps) 
         }
       } catch (err) {
         logger.error("Chat error", { error: String(err) });
-        addMessage(
-          "assistant",
-          "Sorry, I encountered an error. Please try again or browse the FAQ section above for common questions.",
-          "low"
-        );
+        const errorMessage = !navigator.onLine 
+          ? "You appear to be offline. I'll stay ready here — please check your connection and try again."
+          : "I encountered a technical glitch while processing that. Don't worry, your civic data is safe. Please try rephrasing your question.";
+        
+        addMessage("assistant", errorMessage, "low");
       } finally {
         clearInterval(loadingInterval);
         setIsLoading(false);
